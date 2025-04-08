@@ -33,7 +33,7 @@ export const artists: Artist[] = [
   {
     id: "4",
     name: "Bad Bunny",
-    imageUrl: "https://i.scdn.co/image/ab6761610000e5eb8ee9a6f54dcbd3bc500f0f3a",
+    imageUrl: "https://i.scdn.co/image/ab6761610000e5eba9027165d44664c0c8cdc88c",
     monthlyListeners: 59432100,
     genres: ["reggaeton", "latin trap"]
   },
