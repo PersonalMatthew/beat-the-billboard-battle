@@ -2,6 +2,7 @@
 import { Artist } from "@/utils/mockData";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/gameLogic";
+import { useState } from "react";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -11,6 +12,8 @@ interface ArtistCardProps {
 }
 
 const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) => {
+  const [imageError, setImageError] = useState(false);
+  
   // Determine background class based on revealed state and correctness
   const getBgClass = () => {
     if (!revealed) return "bg-spotify-lightgray";
@@ -21,6 +24,21 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         : "bg-spotify-lightgray";
   };
 
+  // Handle image load error
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // Get fallback image with artist initial
+  const getFallbackImage = () => {
+    const initial = artist.name ? artist.name.charAt(0).toUpperCase() : "?";
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-spotify-green text-white text-6xl font-bold">
+        {initial}
+      </div>
+    );
+  };
+
   return (
     <div 
       className={`artist-card relative rounded-lg p-6 shadow-lg ${getBgClass()} flex flex-col items-center justify-between h-full transition-all duration-300`}
@@ -28,11 +46,16 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
       <div className="w-full flex flex-col items-center justify-center">
         {/* Artist Image */}
         <div className="relative w-48 h-48 mb-4 overflow-hidden rounded-full border-4 border-spotify-green">
-          <img 
-            src={artist.imageUrl} 
-            alt={artist.name} 
-            className="w-full h-full object-cover"
-          />
+          {imageError ? (
+            getFallbackImage()
+          ) : (
+            <img 
+              src={artist.imageUrl} 
+              alt={artist.name} 
+              className="w-full h-full object-cover"
+              onError={handleImageError}
+            />
+          )}
         </div>
         
         {/* Artist Name */}
