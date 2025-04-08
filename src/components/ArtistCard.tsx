@@ -38,9 +38,9 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         {/* Artist Name */}
         <h2 className="text-2xl font-bold text-white mb-2">{artist.name}</h2>
         
-        {/* Artist Genres */}
+        {/* Artist Genres - Adding null check before accessing 'slice' */}
         <div className="flex flex-wrap justify-center gap-2 mb-4">
-          {artist.genres.slice(0, 2).map((genre, index) => (
+          {artist.genres && artist.genres.slice(0, 2).map((genre, index) => (
             <span 
               key={index} 
               className="bg-spotify-black bg-opacity-40 text-xs px-2 py-1 rounded-full text-white"
