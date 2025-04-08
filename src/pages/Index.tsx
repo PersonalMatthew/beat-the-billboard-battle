@@ -102,42 +102,49 @@ const Index = () => {
 
   // Display the main game
   return (
-    <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
-      <p className="text-white text-lg mb-8 text-center max-w-2xl">
-        Guess which artist has more monthly Spotify listeners. How far can you go?
-      </p>
-      
-      <ScoreDisplay currentScore={score} />
-      
-      <div className="flex flex-col md:flex-row items-center justify-around w-full max-w-6xl gap-6 mb-10">
-        {/* First Artist */}
-        <ArtistCard 
-          artist={artists[0]} 
-          onSelect={() => handleSelectArtist(artists[0], artists[1])} 
-          revealed={revealed}
-          isCorrect={selectedArtist?.id === artists[0].id ? isCorrect : null}
-        />
+    <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
+      <div className="w-full flex flex-col items-center">
+        <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
+        <p className="text-white text-lg mb-8 text-center max-w-2xl">
+          Guess which artist has more monthly Spotify listeners. How far can you go?
+        </p>
         
-        {/* VS Display */}
-        <div className="flex flex-col items-center justify-center my-4 md:my-0">
-          <div className="bg-spotify-green/20 p-6 rounded-full">
-            <span className="vs-text text-4xl font-bold text-spotify-green">VS</span>
+        <ScoreDisplay currentScore={score} />
+        
+        <div className="flex flex-col md:flex-row items-center justify-around w-full max-w-6xl gap-6 mb-10">
+          {/* First Artist */}
+          <ArtistCard 
+            artist={artists[0]} 
+            onSelect={() => handleSelectArtist(artists[0], artists[1])} 
+            revealed={revealed}
+            isCorrect={selectedArtist?.id === artists[0].id ? isCorrect : null}
+          />
+          
+          {/* VS Display */}
+          <div className="flex flex-col items-center justify-center my-4 md:my-0">
+            <div className="bg-spotify-green/20 p-6 rounded-full">
+              <span className="vs-text text-4xl font-bold text-spotify-green">VS</span>
+            </div>
           </div>
+          
+          {/* Second Artist */}
+          <ArtistCard 
+            artist={artists[1]} 
+            onSelect={() => handleSelectArtist(artists[1], artists[0])} 
+            revealed={revealed}
+            isCorrect={selectedArtist?.id === artists[1].id ? isCorrect : null}
+          />
         </div>
         
-        {/* Second Artist */}
-        <ArtistCard 
-          artist={artists[1]} 
-          onSelect={() => handleSelectArtist(artists[1], artists[0])} 
-          revealed={revealed}
-          isCorrect={selectedArtist?.id === artists[1].id ? isCorrect : null}
-        />
+        <div className="text-center text-white/70 text-sm mb-8">
+          <p>Who has more monthly listeners on Spotify?</p>
+        </div>
       </div>
       
-      <div className="text-center text-white/70 text-sm mb-8">
-        <p>Who has more monthly listeners on Spotify?</p>
-      </div>
+      {/* Footer */}
+      <footer className="w-full py-4 text-center text-white/50 text-sm mt-auto">
+        <p>By PersonalMatthew 2025</p>
+      </footer>
     </div>
   );
 };
