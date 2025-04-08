@@ -26,6 +26,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
 
   // Handle image load error
   const handleImageError = () => {
+    console.log(`Image failed to load for artist: ${artist.name}`);
     setImageError(true);
   };
 
