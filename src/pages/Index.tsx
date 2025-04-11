@@ -21,26 +21,39 @@ const Index = () => {
   const [wrongArtist, setWrongArtist] = useState<Artist | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   
   // Initialize the game
   useEffect(() => {
-    startNewRound();
     setSpotifyConnected(isSpotifyAuthorized());
+    startNewRound();
   }, []);
 
   // Start a new round
-  const startNewRound = () => {
-    const newArtistPair = getArtistPair();
-    setArtists(newArtistPair);
-    setRevealed(false);
-    setSelectedArtist(null);
-    setIsCorrect(null);
+  const startNewRound = async () => {
+    setLoading(true);
+    try {
+      const newArtistPair = await getArtistPair();
+      setArtists(newArtistPair);
+    } catch (error) {
+      console.error("Error getting artist pair:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem loading artists.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setRevealed(false);
+      setSelectedArtist(null);
+      setIsCorrect(null);
+    }
   };
 
   // Handle user guess
   const handleSelectArtist = (selected: Artist, other: Artist) => {
     // Prevent multiple selections
-    if (selectedArtist) return;
+    if (selectedArtist || loading) return;
     
     setSelectedArtist(selected);
     setRevealed(true);
@@ -127,38 +140,48 @@ const Index = () => {
           Guess which artist has more monthly Spotify listeners. How far can you go?
         </p>
 
-        {!spotifyConnected && (
+        {!spotifyConnected ? (
           <div className="mb-6 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-md text-yellow-300 text-sm max-w-2xl text-center">
             <p>⚠️ Using mock data. <Link to="/config" className="underline">Connect Spotify API</Link> for real artist data.</p>
+          </div>
+        ) : (
+          <div className="mb-6 p-3 bg-green-900/40 border border-green-700/50 rounded-md text-green-300 text-sm max-w-2xl text-center">
+            <p>✅ Using real Spotify data!</p>
           </div>
         )}
         
         <ScoreDisplay currentScore={score} />
         
-        <div className="flex flex-col md:flex-row items-center justify-around w-full max-w-6xl gap-6 mb-10">
-          {/* First Artist */}
-          <ArtistCard 
-            artist={artists[0]} 
-            onSelect={() => handleSelectArtist(artists[0], artists[1])} 
-            revealed={revealed}
-            isCorrect={selectedArtist?.id === artists[0].id ? isCorrect : null}
-          />
-          
-          {/* VS Display */}
-          <div className="flex flex-col items-center justify-center my-4 md:my-0">
-            <div className="bg-spotify-green/20 p-6 rounded-full">
-              <span className="vs-text text-4xl font-bold text-spotify-green">VS</span>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center w-full py-20">
+            <div className="animate-spin w-12 h-12 border-4 border-spotify-green border-t-transparent rounded-full"></div>
           </div>
-          
-          {/* Second Artist */}
-          <ArtistCard 
-            artist={artists[1]} 
-            onSelect={() => handleSelectArtist(artists[1], artists[0])} 
-            revealed={revealed}
-            isCorrect={selectedArtist?.id === artists[1].id ? isCorrect : null}
-          />
-        </div>
+        ) : (
+          <div className="flex flex-col md:flex-row items-center justify-around w-full max-w-6xl gap-6 mb-10">
+            {/* First Artist */}
+            <ArtistCard 
+              artist={artists[0]} 
+              onSelect={() => handleSelectArtist(artists[0], artists[1])} 
+              revealed={revealed}
+              isCorrect={selectedArtist?.id === artists[0].id ? isCorrect : null}
+            />
+            
+            {/* VS Display */}
+            <div className="flex flex-col items-center justify-center my-4 md:my-0">
+              <div className="bg-spotify-green/20 p-6 rounded-full">
+                <span className="vs-text text-4xl font-bold text-spotify-green">VS</span>
+              </div>
+            </div>
+            
+            {/* Second Artist */}
+            <ArtistCard 
+              artist={artists[1]} 
+              onSelect={() => handleSelectArtist(artists[1], artists[0])} 
+              revealed={revealed}
+              isCorrect={selectedArtist?.id === artists[1].id ? isCorrect : null}
+            />
+          </div>
+        )}
         
         <div className="text-center text-white/70 text-sm mb-8">
           <p>Who has more monthly listeners on Spotify?</p>

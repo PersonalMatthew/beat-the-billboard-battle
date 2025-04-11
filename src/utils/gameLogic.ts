@@ -1,6 +1,26 @@
 
 import { Artist, artists, fetchArtistFromSpotify, needsTokenRefresh } from "./mockData";
 
+// Get a random artist from our list with Spotify API integration
+export async function getRandomArtistFromSpotify(): Promise<Artist | null> {
+  // Check if Spotify API is authorized
+  if (isSpotifyAuthorized()) {
+    try {
+      // Get a random artist ID from our mock data to use as a source
+      const randomIndex = Math.floor(Math.random() * artists.length);
+      const sourceArtist = artists[randomIndex];
+      
+      // Fetch real-time data for this artist from Spotify
+      const spotifyArtist = await fetchArtistFromSpotify(sourceArtist.id);
+      return spotifyArtist;
+    } catch (error) {
+      console.error('Failed to fetch artist from Spotify:', error);
+      return null;
+    }
+  }
+  return null;
+}
+
 // Get a random artist from our list
 export function getRandomArtist(excludeArtist?: Artist): Artist {
   let randomArtist: Artist;
@@ -15,7 +35,26 @@ export function getRandomArtist(excludeArtist?: Artist): Artist {
 }
 
 // Get two random artists for comparison
-export function getArtistPair(): [Artist, Artist] {
+export async function getArtistPair(): Promise<[Artist, Artist]> {
+  // Try to use Spotify API first
+  if (isSpotifyAuthorized()) {
+    try {
+      const artistA = await getRandomArtistFromSpotify() || getRandomArtist();
+      let artistB;
+      
+      // Make sure we don't get the same artist twice
+      do {
+        artistB = await getRandomArtistFromSpotify() || getRandomArtist();
+      } while (artistB.id === artistA.id);
+      
+      return [artistA, artistB];
+    } catch (error) {
+      console.error('Error getting artist pair from Spotify:', error);
+      // Fall back to mock data
+    }
+  }
+  
+  // Fall back to mock data if API is not available or fails
   const artistA = getRandomArtist();
   const artistB = getRandomArtist(artistA);
   
@@ -51,4 +90,3 @@ export function isSpotifyAuthorized(): boolean {
   const accessToken = localStorage.getItem('spotify_access_token');
   return accessToken !== null && !needsTokenRefresh();
 }
-
