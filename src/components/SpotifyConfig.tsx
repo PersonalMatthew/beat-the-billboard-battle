@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ interface SpotifyConfigProps {
 
 const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('spotify_access_token') !== null && !needsTokenRefresh();
@@ -62,8 +64,17 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           description: "Successfully connected to Spotify API",
         });
         
+        // Create user object if it doesn't exist
+        if (!localStorage.getItem('user')) {
+          const userObj = { username: "Developer" };
+          localStorage.setItem('user', JSON.stringify(userObj));
+        }
+        
         if (onAuthenticated) {
           onAuthenticated();
+        } else {
+          // If no callback is provided, navigate to home
+          navigate("/");
         }
       } else {
         toast({
@@ -88,6 +99,15 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     handleAuthenticate();
   };
 
+  const handleGoToHome = () => {
+    // Create user object if it doesn't exist
+    if (!localStorage.getItem('user')) {
+      const userObj = { username: "Developer" };
+      localStorage.setItem('user', JSON.stringify(userObj));
+    }
+    navigate("/");
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -106,7 +126,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
             <div className="animate-spin w-8 h-8 border-4 border-spotify-green border-t-transparent rounded-full"></div>
           </div>
         ) : isAuthenticated ? (
-          <div className="bg-green-900/40 border border-green-700/50 rounded-md p-3 text-green-300">
+          <div className="bg-green-900/40 border border-green-700/50 rounded-md p-3 text-green-300 mb-4">
             <p>✅ Spotify API connected successfully!</p>
           </div>
         ) : (
@@ -123,6 +143,15 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
             </Button>
           </div>
         )}
+        
+        {isAuthenticated && (
+          <Button 
+            onClick={handleGoToHome}
+            className="w-full mt-4 bg-spotify-green hover:bg-spotify-green/80"
+          >
+            Go to Game Home
+          </Button>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2 items-center text-xs text-muted-foreground">
         <p className="text-center">This app uses the Spotify Web API to fetch real artist data.</p>
@@ -132,3 +161,4 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
 };
 
 export default SpotifyConfig;
+
