@@ -18,6 +18,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('spotify_access_token') !== null && !needsTokenRefresh();
   });
+  const [notifiedAuthenticated, setNotifiedAuthenticated] = useState(false);
 
   // Spotify API credentials - these are demo credentials and can be public
   const CLIENT_ID = "1c9856cb829c429e856cefb2b0d8da5a";
@@ -38,15 +39,16 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           // Use default credentials
           await handleAuthenticate();
         }
-      } else if (isAuthenticated && onAuthenticated) {
+      } else if (isAuthenticated && onAuthenticated && !notifiedAuthenticated) {
         // Clear any previous game mode selection
         localStorage.removeItem('selectedGameMode');
+        setNotifiedAuthenticated(true);
         onAuthenticated();
       }
     };
     
     checkAndAuthenticate();
-  }, [isAuthenticated, onAuthenticated]);
+  }, [isAuthenticated, onAuthenticated, notifiedAuthenticated]);
 
   const handleAuthenticate = async (clientId = CLIENT_ID, clientSecret = CLIENT_SECRET) => {
     setIsAuthenticating(true);
@@ -72,6 +74,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
         }
         
         if (onAuthenticated) {
+          setNotifiedAuthenticated(true);
           onAuthenticated();
         } else {
           // If no callback is provided, navigate to home
@@ -106,7 +109,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
       const userObj = { username: "Developer" };
       localStorage.setItem('user', JSON.stringify(userObj));
     }
-    navigate("/");
+    // Force navigation to home
+    console.log("Navigating to home...");
+    navigate("/", { replace: true });
   };
 
   return (
