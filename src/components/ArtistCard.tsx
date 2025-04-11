@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/gameLogic";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { UserIcon } from "lucide-react";
+import { UserIcon, ImageOff } from "lucide-react";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -24,6 +24,14 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
     setFallbackAttempts(0);
     setImageUrl(artist.imageUrl || '');
   }, [artist.id, artist.imageUrl]);
+
+  // Immediate check for empty or suspicious URLs that often fail
+  useEffect(() => {
+    if (!imageUrl || imageUrl === 'undefined' || imageUrl === 'null' || imageUrl.length < 10) {
+      console.log("Empty or invalid image URL detected:", imageUrl);
+      setImageError(true);
+    }
+  }, [imageUrl]);
   
   // Determine background class based on revealed state and correctness
   const getBgClass = () => {
@@ -92,6 +100,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
                 alt={artist.name || "Artist"}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
+                loading="eager"
               />
             )}
             <AvatarFallback 
@@ -100,6 +109,13 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
               {getFallbackContent()}
             </AvatarFallback>
           </Avatar>
+          
+          {/* Visual indicator when image has failed to load */}
+          {imageError && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+              <ImageOff className="h-10 w-10 text-white/60 mx-auto mb-2" />
+            </div>
+          )}
         </div>
         
         {/* Artist Name */}
