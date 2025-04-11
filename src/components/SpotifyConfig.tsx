@@ -109,9 +109,20 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
       const userObj = { username: "Developer" };
       localStorage.setItem('user', JSON.stringify(userObj));
     }
-    // Force navigation to home
-    console.log("Navigating to home...");
-    navigate("/", { replace: true });
+    
+    // Make sure we have a token stored before redirecting
+    if (!localStorage.getItem('spotify_access_token')) {
+      toast({
+        title: "Authentication Required",
+        description: "Please connect to Spotify API first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Force navigation to home using window.location for a full refresh
+    console.log("Navigating to home using window.location...");
+    window.location.href = "/";
   };
 
   return (

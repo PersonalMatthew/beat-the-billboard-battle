@@ -1,9 +1,9 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import SpotifyConfig from "./SpotifyConfig";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -74,8 +74,8 @@ const Login = () => {
         };
         localStorage.setItem('user', JSON.stringify(userObj));
         
-        // Navigate to the game
-        navigate("/");
+        // Navigate to the game using window.location for a full refresh
+        window.location.href = "/";
       }, 1500);
     } catch (error) {
       console.error("Failed to connect:", error);
@@ -105,8 +105,8 @@ const Login = () => {
     // Clear any previously selected game mode
     localStorage.removeItem('selectedGameMode');
     
-    // Navigate to the game mode selection
-    navigate("/");
+    // Navigate to the game using window.location for a full refresh
+    window.location.href = "/";
   };
 
   return (

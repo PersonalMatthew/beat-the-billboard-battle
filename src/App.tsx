@@ -19,6 +19,9 @@ const App = () => {
     // Check if Spotify API is connected
     const token = localStorage.getItem('spotify_access_token');
     setIsApiConnected(!!token);
+    
+    // Log the current state for debugging
+    console.log("API Connected state:", !!token);
   }, []);
 
   return (
