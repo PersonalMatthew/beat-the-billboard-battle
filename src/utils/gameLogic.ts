@@ -1,5 +1,33 @@
-
 import { Artist, artists, fetchArtistFromSpotify, needsTokenRefresh } from "./mockData";
+
+// Generate a predictable but different artist list each day for Daily Challenge mode
+export function getDailyArtists(): Artist[] {
+  // Use the current date as a seed for selecting artists
+  const today = new Date();
+  const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  
+  // Create a simple hash from the date string to use as our seed
+  let seed = 0;
+  for (let i = 0; i < dateString.length; i++) {
+    seed = ((seed << 5) - seed) + dateString.charCodeAt(i);
+    seed = seed & seed; // Convert to 32bit integer
+  }
+  
+  // Use the seed to create a shuffled array of indices
+  const indices = Array.from({ length: artists.length }, (_, i) => i);
+  
+  // Fisher-Yates shuffle with a deterministic seed
+  for (let i = indices.length - 1; i > 0; i--) {
+    const seededRandom = Math.abs((seed * (i + 1)) % 1);
+    const j = Math.floor(seededRandom * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+    seed = ((seed << 5) - seed) + i; // Update seed for next iteration
+  }
+  
+  // Return the first 20 artists from the seeded shuffle
+  // We get 20 so we can create 10 pairs
+  return indices.slice(0, 20).map(index => artists[index]);
+}
 
 // Get a random artist from our list with Spotify API integration
 export async function getRandomArtistFromSpotify(): Promise<Artist | null> {
@@ -374,7 +402,19 @@ export function getRandomArtist(excludeArtist?: Artist): Artist {
 }
 
 // Get two random artists for comparison, adjusted for game difficulty based on score
-export async function getArtistPair(currentScore: number = 0): Promise<[Artist, Artist]> {
+export async function getArtistPair(currentScore: number = 0, gameMode: "daily" | "streak" = "streak", pairIndex?: number): Promise<[Artist, Artist]> {
+  if (gameMode === "daily" && typeof pairIndex === "number") {
+    // For daily mode, get the pre-determined pairs
+    const dailyArtists = getDailyArtists();
+    // Make sure we have enough artists
+    if (pairIndex >= 0 && pairIndex < 10) {
+      // Create a deterministic pair from the daily artists
+      const artistA = dailyArtists[pairIndex * 2]; // Even indices
+      const artistB = dailyArtists[pairIndex * 2 + 1]; // Odd indices
+      return [artistA, artistB];
+    }
+  }
+  
   // Define difficulty tiers based on score
   // As score increases, the difference between artist popularity decreases
   const getDifficultyFactor = (score: number): number => {
@@ -489,18 +529,33 @@ export function checkGuess(selectedArtist: Artist, otherArtist: Artist): boolean
   return selectedArtist.monthlyListeners > otherArtist.monthlyListeners;
 }
 
-// Save high score to localStorage
-export function saveHighScore(score: number): void {
-  const currentHighScore = getHighScore();
+// Save high score to localStorage (separate for each mode)
+export function saveHighScore(score: number, gameMode: "daily" | "streak" = "streak"): void {
+  const highScoreKey = gameMode === "daily" ? 'dailyHighScore' : 'highScore';
+  const currentHighScore = getHighScore(gameMode);
   if (score > currentHighScore) {
-    localStorage.setItem('highScore', score.toString());
+    localStorage.setItem(highScoreKey, score.toString());
   }
 }
 
-// Get high score from localStorage
-export function getHighScore(): number {
-  const highScore = localStorage.getItem('highScore');
+// Get high score from localStorage (separate for each mode)
+export function getHighScore(gameMode: "daily" | "streak" = "streak"): number {
+  const highScoreKey = gameMode === "daily" ? 'dailyHighScore' : 'highScore';
+  const highScore = localStorage.getItem(highScoreKey);
   return highScore ? parseInt(highScore) : 0;
+}
+
+// Get the current daily completion status
+export function getDailyCompletionStatus(): boolean {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const lastCompletedDay = localStorage.getItem('lastCompletedDailyChallenge');
+  return lastCompletedDay === today;
+}
+
+// Mark the daily challenge as completed for today
+export function markDailyAsCompleted(): void {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  localStorage.setItem('lastCompletedDailyChallenge', today);
 }
 
 // Check if Spotify API is authorized and token is valid
