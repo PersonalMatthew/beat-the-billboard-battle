@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Key } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const devFormSchema = z.object({
   clientId: z.string().min(1, "Client ID is required"),
@@ -20,6 +21,7 @@ const Login = () => {
   const { toast } = useToast();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const navigate = useNavigate();
 
   // Form definition
   const form = useForm<z.infer<typeof devFormSchema>>({
@@ -75,8 +77,9 @@ const Login = () => {
         };
         localStorage.setItem('user', JSON.stringify(userObj));
         
-        // Navigate to the game - we'll use the SpotifyConfig to handle this now
-        console.log("Login - Developer auth complete, SpotifyConfig will handle redirect");
+        // Navigate to the game - we'll use React Router navigation
+        console.log("Login - Developer auth complete, navigating home");
+        navigate("/", { replace: true });
       }, 1500);
     } catch (error) {
       console.error("Login - Failed to connect:", error);
@@ -99,9 +102,9 @@ const Login = () => {
       description: "Successfully connected to Spotify API!",
     });
     
-    // Navigate to home page
+    // Navigate to home page using React Router (more reliable)
     console.log("Login - Redirecting after Spotify connected");
-    window.location.href = "/";
+    navigate("/", { replace: true });
   };
 
   return (

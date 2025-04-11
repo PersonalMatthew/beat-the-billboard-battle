@@ -28,6 +28,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   // Authenticate on component mount if needed
   useEffect(() => {
     const checkAndAuthenticate = async () => {
+      // Don't do anything if we're already authenticating
+      if (isAuthenticating) return;
+      
       // Check if we have developer provided credentials
       const devClientId = localStorage.getItem("spotify_client_id");
       const devClientSecret = localStorage.getItem("spotify_client_secret");
@@ -43,14 +46,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           // Use developer credentials
           console.log("SpotifyConfig - Using developer credentials for authentication");
           await handleAuthenticate(devClientId, devClientSecret);
-        } else {
-          // Use default credentials
-          console.log("SpotifyConfig - Using default credentials for authentication");
-          await handleAuthenticate();
         }
       } else if (isAuthenticated && onAuthenticated && !notifiedAuthenticated) {
-        // Clear any previous game mode selection
-        localStorage.removeItem('selectedGameMode');
+        // Notify parent that authentication is complete
         console.log("SpotifyConfig - Already authenticated, notifying via callback");
         setNotifiedAuthenticated(true);
         onAuthenticated();
@@ -61,6 +59,8 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   }, [isAuthenticated, onAuthenticated, notifiedAuthenticated, isAuthenticating]);
 
   const handleAuthenticate = async (clientId = CLIENT_ID, clientSecret = CLIENT_SECRET) => {
+    if (isAuthenticating) return; // Prevent multiple authentication attempts
+    
     setIsAuthenticating(true);
     console.log("SpotifyConfig - Starting authentication process");
     
@@ -112,27 +112,15 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   };
 
   const handleManualAuthenticate = () => {
-    // Use default credentials for the default button
-    console.log("SpotifyConfig - Manual authentication requested");
-    handleAuthenticate();
+    // Only attempt authentication if not already authenticated
+    if (!isAuthenticated && !isAuthenticating) {
+      console.log("SpotifyConfig - Manual authentication requested");
+      handleAuthenticate();
+    }
   };
 
   const handleGoToHome = () => {
     console.log("SpotifyConfig - Go to home button clicked");
-    
-    // Make sure we have a token stored before redirecting
-    if (!localStorage.getItem('spotify_access_token')) {
-      console.warn("SpotifyConfig - No access token found, showing toast");
-      toast({
-        title: "Authentication Required",
-        description: "Please connect to Spotify API first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Navigate to home page
-    console.log("SpotifyConfig - Navigating to home page");
     window.location.href = "/";
   };
 
