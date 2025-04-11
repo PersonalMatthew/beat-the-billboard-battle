@@ -2,7 +2,8 @@
 import { Artist } from "@/utils/mockData";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/gameLogic";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -13,6 +14,13 @@ interface ArtistCardProps {
 
 const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) => {
   const [imageError, setImageError] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>(artist.imageUrl || '');
+  
+  // Reset image error state when artist changes
+  useEffect(() => {
+    setImageError(false);
+    setImageUrl(artist.imageUrl || '');
+  }, [artist.id, artist.imageUrl]);
   
   // Determine background class based on revealed state and correctness
   const getBgClass = () => {
@@ -28,16 +36,22 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
   const handleImageError = () => {
     console.log(`Image failed to load for artist: ${artist.name}`);
     setImageError(true);
+    
+    // Try a different image format or source
+    if (imageUrl.includes('.jpg')) {
+      setImageUrl(imageUrl.replace('.jpg', '.png'));
+    } else if (imageUrl.includes('.png')) {
+      setImageUrl(imageUrl.replace('.png', '.webp'));
+    } else {
+      // Use a placeholder if all attempts fail
+      setImageError(true);
+    }
   };
 
   // Get fallback image with artist initial
-  const getFallbackImage = () => {
+  const getFallbackContent = () => {
     const initial = artist.name ? artist.name.charAt(0).toUpperCase() : "?";
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-spotify-green text-white text-6xl font-bold">
-        {initial}
-      </div>
-    );
+    return initial;
   };
 
   return (
@@ -47,16 +61,21 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
       <div className="w-full flex flex-col items-center justify-center">
         {/* Artist Image */}
         <div className="relative w-48 h-48 mb-4 overflow-hidden rounded-full border-4 border-spotify-green">
-          {imageError ? (
-            getFallbackImage()
-          ) : (
-            <img 
-              src={artist.imageUrl} 
-              alt={artist.name} 
-              className="w-full h-full object-cover"
-              onError={handleImageError}
-            />
-          )}
+          <Avatar className="w-full h-full">
+            {!imageError && (
+              <AvatarImage 
+                src={imageUrl} 
+                alt={artist.name}
+                className="w-full h-full object-cover"
+                onError={handleImageError}
+              />
+            )}
+            <AvatarFallback 
+              className="w-full h-full flex items-center justify-center bg-spotify-green text-white text-6xl font-bold"
+            >
+              {getFallbackContent()}
+            </AvatarFallback>
+          </Avatar>
         </div>
         
         {/* Artist Name */}

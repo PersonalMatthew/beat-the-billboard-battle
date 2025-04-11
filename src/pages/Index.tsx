@@ -22,19 +22,60 @@ const Index = () => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadAttempts, setLoadAttempts] = useState<number>(0);
   
   // Initialize the game
   useEffect(() => {
-    setSpotifyConnected(isSpotifyAuthorized());
+    const spotifyStatus = isSpotifyAuthorized();
+    setSpotifyConnected(spotifyStatus);
     startNewRound();
+    
+    // Display toast about data source
+    if (spotifyStatus) {
+      toast({
+        title: "Connected to Spotify",
+        description: "Using real artist data from Spotify API!",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Using mock data",
+        description: "Connect Spotify API in settings for real-time data.",
+        variant: "destructive",
+      });
+    }
   }, []);
 
   // Start a new round
   const startNewRound = async () => {
     setLoading(true);
+    setLoadAttempts(prev => prev + 1);
+    
     try {
       const newArtistPair = await getArtistPair();
-      setArtists(newArtistPair);
+      
+      // Validate the artist data
+      if (newArtistPair[0].name && newArtistPair[1].name) {
+        setArtists(newArtistPair);
+        setRevealed(false);
+        setSelectedArtist(null);
+        setIsCorrect(null);
+        setLoading(false);
+      } else {
+        // If we get invalid data, try again (up to 3 times)
+        if (loadAttempts < 3) {
+          console.log("Received invalid artist data, retrying...");
+          startNewRound();
+        } else {
+          console.error("Failed to load valid artist data after multiple attempts");
+          toast({
+            title: "Data Loading Error",
+            description: "Could not load artist data. Please try again later.",
+            variant: "destructive",
+          });
+          setLoading(false);
+        }
+      }
     } catch (error) {
       console.error("Error getting artist pair:", error);
       toast({
@@ -42,11 +83,7 @@ const Index = () => {
         description: "There was a problem loading artists.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
-      setRevealed(false);
-      setSelectedArtist(null);
-      setIsCorrect(null);
     }
   };
 
@@ -75,6 +112,7 @@ const Index = () => {
       
       // Schedule next round
       setTimeout(() => {
+        setLoadAttempts(0); // Reset load attempts counter
         startNewRound();
       }, 2000);
     } else {
@@ -96,6 +134,7 @@ const Index = () => {
   const handlePlayAgain = () => {
     setScore(0);
     setGameOver(false);
+    setLoadAttempts(0); // Reset load attempts counter
     startNewRound();
   };
 
