@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
@@ -35,20 +34,16 @@ const Index = () => {
   const [dailyPairIndex, setDailyPairIndex] = useState<number>(0);
   const [dailyCompleted, setDailyCompleted] = useState<boolean>(false);
   
-  // Initialize the game and prefetch data
   useEffect(() => {
     const spotifyStatus = isSpotifyAuthorized();
     setSpotifyConnected(spotifyStatus);
     
-    // Start prefetching daily artists immediately for faster loading later
     if (spotifyStatus) {
       prefetchDailyArtists().catch(err => console.error("Failed to prefetch:", err));
       
-      // Check if daily challenge is already completed
       const isCompleted = getDailyCompletionStatus();
       setDailyCompleted(isCompleted);
       
-      // If we have a stored game mode, use it
       const storedMode = localStorage.getItem('selectedGameMode');
       if (storedMode === "daily" || storedMode === "streak") {
         setGameMode(storedMode);
@@ -57,7 +52,6 @@ const Index = () => {
     }
   }, []);
 
-  // Start a new round - passing the current score for difficulty adjustment
   const startNewRound = async (mode: "daily" | "streak" = "streak") => {
     if (!isSpotifyAuthorized()) {
       toast({
@@ -72,16 +66,13 @@ const Index = () => {
     setLoadAttempts(prev => prev + 1);
     
     try {
-      // For daily mode, use the current pair index
       let newArtistPair;
       if (mode === "daily") {
         newArtistPair = await getArtistPair(score, "daily", dailyPairIndex);
       } else {
-        // For streak mode, pass the current score for difficulty adjustment
         newArtistPair = await getArtistPair(score, "streak");
       }
       
-      // Validate the artist data
       if (newArtistPair[0].name && newArtistPair[1].name) {
         setArtists(newArtistPair);
         setRevealed(false);
@@ -89,7 +80,6 @@ const Index = () => {
         setIsCorrect(null);
         setLoading(false);
       } else {
-        // If we get invalid data, try again (up to 3 times)
         if (loadAttempts < 3) {
           console.log("Received invalid artist data, retrying...");
           startNewRound(mode);
@@ -115,7 +105,6 @@ const Index = () => {
     }
   };
 
-  // Handle selecting a game mode
   const handleSelectMode = (mode: "daily" | "streak") => {
     if (!isSpotifyAuthorized()) {
       toast({
@@ -134,24 +123,26 @@ const Index = () => {
     startNewRound(mode);
   };
 
-  // Handle Spotify connection state change
   const handleSpotifyConnected = () => {
     setSpotifyConnected(true);
     toast({
       title: "Spotify Connected",
       description: "Successfully connected to Spotify API!",
     });
+    
+    const storedMode = localStorage.getItem('selectedGameMode') as "daily" | "streak" | null;
+    if (storedMode) {
+      setGameMode(storedMode);
+      startNewRound(storedMode);
+    }
   };
 
-  // Go back to mode selection
   const handleBackToModeSelect = () => {
     setGameMode(null);
     localStorage.removeItem('selectedGameMode');
   };
 
-  // Handle user guess
   const handleSelectArtist = (selected: Artist, other: Artist) => {
-    // Prevent multiple selections
     if (selectedArtist || loading) return;
     
     setSelectedArtist(selected);
@@ -161,24 +152,20 @@ const Index = () => {
     setIsCorrect(correct);
     
     if (correct) {
-      // Correct guess
       const newScore = score + 1;
       setScore(newScore);
       
-      // Show success toast
       toast({
         title: "Correct!",
         description: "You guessed right!",
         variant: "default",
       });
       
-      // For daily mode, check if we've reached the end (10 pairs)
       if (gameMode === "daily") {
         const newIndex = dailyPairIndex + 1;
         setDailyPairIndex(newIndex);
         
         if (newIndex >= 10) {
-          // Daily challenge completed
           saveHighScore(newScore, "daily");
           markDailyAsCompleted();
           setDailyCompleted(true);
@@ -187,42 +174,35 @@ const Index = () => {
             setGameOver(true);
           }, 2000);
         } else {
-          // Continue to next pair in daily mode
           setTimeout(() => {
-            setLoadAttempts(0); // Reset load attempts counter
+            setLoadAttempts(0);
             startNewRound("daily");
           }, 2000);
         }
       } else {
-        // Continue in streak mode
         setTimeout(() => {
-          setLoadAttempts(0); // Reset load attempts counter
+          setLoadAttempts(0);
           startNewRound("streak");
         }, 2000);
       }
     } else {
-      // Wrong guess - game over
       setCorrectArtist(other);
       setWrongArtist(selected);
       
-      // Save high score for the current mode
       saveHighScore(score, gameMode || "streak");
       
-      // Show game over after a delay
       setTimeout(() => {
         setGameOver(true);
       }, 2000);
     }
   };
 
-  // Reset the game
   const handlePlayAgain = () => {
     setScore(0);
     setGameOver(false);
     setDailyPairIndex(0);
-    setLoadAttempts(0); // Reset load attempts counter
+    setLoadAttempts(0);
     
-    // For daily mode, if already completed, go back to mode selection
     if (gameMode === "daily" && dailyCompleted) {
       setGameMode(null);
     } else {
@@ -230,27 +210,24 @@ const Index = () => {
     }
   };
 
-  // If Spotify is not connected, show the config screen
   if (!spotifyConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
         <div className="w-full flex flex-col items-center">
           <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
           <p className="text-white text-lg mb-8 text-center max-w-2xl">
-            Connect to Spotify to play with real artist data
+            Connecting to Spotify API...
           </p>
           
           <div className="w-full max-w-md mx-auto bg-spotify-darkgray p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-spotify-green mb-4">Spotify Authentication Required</h2>
+            <h2 className="text-2xl font-bold text-spotify-green mb-4">Connecting to Spotify API</h2>
             <p className="text-white mb-6">
-              This game requires Spotify API access to get real artist data. 
-              Please connect your Spotify developer account below.
+              Please wait while we connect to the Spotify API to fetch artist data...
             </p>
             <SpotifyConfig onAuthenticated={handleSpotifyConnected} />
           </div>
         </div>
         
-        {/* Footer */}
         <footer className="w-full py-4 text-center text-white/50 text-sm mt-auto">
           <p>By PersonalMatthew 2025</p>
         </footer>
@@ -258,7 +235,6 @@ const Index = () => {
     );
   }
 
-  // If game mode is not selected yet, show the mode selector
   if (gameMode === null) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
@@ -271,7 +247,6 @@ const Index = () => {
           <GameModeSelector onSelectMode={handleSelectMode} />
         </div>
         
-        {/* Footer */}
         <footer className="w-full py-4 text-center text-white/50 text-sm mt-auto">
           <p>By PersonalMatthew 2025</p>
         </footer>
@@ -279,7 +254,6 @@ const Index = () => {
     );
   }
 
-  // Display game over screen if game is over
   if (gameOver) {
     return (
       <GameOverScreen
@@ -301,7 +275,6 @@ const Index = () => {
     );
   }
 
-  // Display the main game
   return (
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
       <div className="w-full flex flex-col items-center">
@@ -310,7 +283,6 @@ const Index = () => {
           Guess which artist has more monthly Spotify listeners. How far can you go?
         </p>
         
-        {/* Game mode indicator & progress */}
         <div className="mb-4">
           <span className="px-3 py-1 bg-spotify-green/20 text-spotify-green rounded-full text-sm font-medium">
             {gameMode === "daily" ? `Daily Challenge: ${dailyPairIndex + 1}/10` : "Streak Mode"}
@@ -329,7 +301,6 @@ const Index = () => {
           </div>
         ) : (
           <div className="flex flex-col md:flex-row items-center justify-around w-full max-w-6xl gap-6 mb-10">
-            {/* First Artist */}
             <ArtistCard 
               artist={artists[0]} 
               onSelect={() => handleSelectArtist(artists[0], artists[1])} 
@@ -337,14 +308,12 @@ const Index = () => {
               isCorrect={selectedArtist?.id === artists[0].id ? isCorrect : null}
             />
             
-            {/* VS Display */}
             <div className="flex flex-col items-center justify-center my-4 md:my-0">
               <div className="bg-spotify-green/20 p-6 rounded-full">
                 <span className="vs-text text-4xl font-bold text-spotify-green">VS</span>
               </div>
             </div>
             
-            {/* Second Artist */}
             <ArtistCard 
               artist={artists[1]} 
               onSelect={() => handleSelectArtist(artists[1], artists[0])} 
@@ -359,7 +328,6 @@ const Index = () => {
         </div>
       </div>
       
-      {/* Footer */}
       <footer className="w-full py-4 text-center text-white/50 text-sm mt-auto">
         <p>By PersonalMatthew 2025</p>
       </footer>

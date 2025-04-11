@@ -12,6 +12,11 @@ const Config = () => {
     setIsAuthorized(isSpotifyAuthorized());
   }, []);
 
+  // Handler for when Spotify is connected
+  const handleSpotifyConnected = () => {
+    setIsAuthorized(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray p-6">
       <div className="max-w-3xl mx-auto">
@@ -37,18 +42,15 @@ const Config = () => {
           </div>
         )}
         
-        <SpotifyConfig />
+        <SpotifyConfig onAuthenticated={handleSpotifyConnected} />
         
         <div className="mt-8 bg-spotify-lightgray/20 p-4 rounded-lg">
-          <h2 className="text-xl font-semibold text-spotify-white mb-2">How to Find Artist IDs</h2>
-          <p className="text-spotify-white/80 mb-2">
-            You can find a Spotify artist ID in the URL when viewing an artist on Spotify web:
+          <h2 className="text-xl font-semibold text-spotify-white mb-2">How It Works</h2>
+          <p className="text-spotify-white/80 mb-4">
+            This game uses the Spotify API to fetch real artist data. It automatically connects to the API without requiring you to log in or provide any credentials.
           </p>
-          <code className="block bg-spotify-black p-2 rounded text-spotify-green text-sm mb-4">
-            https://open.spotify.com/artist/<span className="text-spotify-white">06HL4z0CvFAxyc27GXpf02</span>
-          </code>
           <p className="text-spotify-white/80">
-            The part after "/artist/" is the artist ID you need to enter above.
+            Just enjoy the game and test your knowledge of music popularity!
           </p>
         </div>
       </div>
