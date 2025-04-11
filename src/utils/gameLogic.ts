@@ -17,20 +17,33 @@ export async function getDailyArtists(): Promise<Artist[]> {
   if (isSpotifyAuthorized()) {
     try {
       const dailyArtists: Artist[] = [];
+      const seenArtistIds = new Set<string>();
       
       // We need 20 artists for 10 pairs
-      for (let i = 0; i < 20; i++) {
+      let attempts = 0;
+      const maxAttempts = 50; // Limit attempts to avoid infinite loops
+      
+      while (dailyArtists.length < 20 && attempts < maxAttempts) {
+        attempts++;
+        
         // Use seed to create a deterministic "random" number for this position each day
-        const seededRandom = Math.abs((seed * (i + 1)) % 1);
+        const seededRandom = Math.abs((seed * (dailyArtists.length + 1) * attempts) % 1);
         
         // Fetch artist from Spotify API
         const artist = await getRandomArtistFromSpotify(seededRandom);
         
-        if (artist) {
+        if (artist && artist.id && !seenArtistIds.has(artist.id)) {
           dailyArtists.push(artist);
+          seenArtistIds.add(artist.id);
         } else {
           // Fall back to mock data if API fails
-          dailyArtists.push(getSeededRandomArtist(seed, i));
+          const mockArtist = getSeededRandomArtist(seed, dailyArtists.length * attempts);
+          
+          // Only add if it's not already in the list
+          if (!seenArtistIds.has(mockArtist.id)) {
+            dailyArtists.push(mockArtist);
+            seenArtistIds.add(mockArtist.id);
+          }
         }
       }
       
@@ -446,10 +459,22 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
       const dailyArtists = await getDailyArtists();
       
       // Make sure we have enough artists
-      if (pairIndex >= 0 && pairIndex < 10) {
+      if (pairIndex >= 0 && pairIndex < 10 && dailyArtists.length >= 20) {
         // Create a deterministic pair from the daily artists
         const artistA = dailyArtists[pairIndex * 2]; // Even indices
         const artistB = dailyArtists[pairIndex * 2 + 1]; // Odd indices
+        
+        // Double-check that we don't have identical artists
+        if (artistA.id === artistB.id) {
+          console.error("Identical artists in daily pair, fetching different one");
+          // Get a different artist for position B
+          for (let i = 0; i < dailyArtists.length; i++) {
+            if (dailyArtists[i].id !== artistA.id) {
+              return [artistA, dailyArtists[i]];
+            }
+          }
+        }
+        
         return [artistA, artistB];
       }
     } catch (error) {
@@ -474,7 +499,7 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
       let artistA: Artist | null = null;
       let artistB: Artist | null = null;
       let attempts = 0;
-      const maxAttempts = 5; // Limit attempts to avoid infinite loops
+      const maxAttempts = 10; // Increased max attempts to find suitable pairs
       
       // Get the first artist
       artistA = await getRandomArtistFromSpotify() || getRandomArtist();
@@ -486,11 +511,11 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
           : '';
         
         // Try to find a second artist with the same genre but different popularity
-        while ((!artistB || !hasValidPopulationDifference(artistA, artistB, currentScore)) && attempts < maxAttempts) {
+        while ((!artistB || !hasValidPopulationDifference(artistA, artistB, currentScore) || artistB.id === artistA.id) && attempts < maxAttempts) {
           attempts++;
           
           // Try to get an artist from the same genre
-          let tempArtistB = await getRandomArtistFromSpotify() || getRandomArtist();
+          let tempArtistB = await getRandomArtistFromSpotify() || getRandomArtist(artistA); // Pass artistA to exclude it
           
           // Check if the genres match and they're not the same artist
           if (tempArtistB && tempArtistB.id !== artistA.id) {
@@ -514,7 +539,7 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
         // If we couldn't find a suitable match after max attempts, just use any different artist
         if (!artistB) {
           do {
-            artistB = await getRandomArtistFromSpotify() || getRandomArtist();
+            artistB = await getRandomArtistFromSpotify() || getRandomArtist(artistA); // Ensure different artist
           } while (artistB && artistA && artistB.id === artistA.id);
         }
         
@@ -531,7 +556,7 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
   
   // Fall back to mock data if API is not available or fails
   const artistA = getRandomArtist();
-  const artistB = getRandomArtist(artistA);
+  const artistB = getRandomArtist(artistA); // This ensures artistB is not the same as artistA
   
   return [artistA, artistB];
 }

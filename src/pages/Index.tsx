@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
@@ -106,6 +105,12 @@ const Index = () => {
     setDailyPairIndex(0);
     localStorage.setItem('selectedGameMode', mode);
     startNewRound(mode);
+  };
+
+  // Go back to mode selection
+  const handleBackToModeSelect = () => {
+    setGameMode(null);
+    localStorage.removeItem('selectedGameMode');
   };
 
   // Handle user guess
@@ -248,7 +253,11 @@ const Index = () => {
           </span>
         </div>
         
-        <ScoreDisplay currentScore={score} gameMode={gameMode} />
+        <ScoreDisplay 
+          currentScore={score} 
+          gameMode={gameMode} 
+          onBackClick={handleBackToModeSelect}
+        />
         
         {loading ? (
           <div className="flex items-center justify-center w-full py-20">
