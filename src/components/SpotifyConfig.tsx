@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface SpotifyConfigProps {
   onAuthenticated?: () => void;
@@ -15,9 +15,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     return localStorage.getItem('spotify_access_token') !== null && !needsTokenRefresh();
   });
 
-  // Pre-configured Spotify API credentials (in a real app, these would be environment variables)
-  const CLIENT_ID = "your-spotify-client-id"; // Replace with your actual Spotify client ID
-  const CLIENT_SECRET = "your-spotify-client-secret"; // Replace with your actual Spotify client secret
+  // Real Spotify API credentials (client ID is public)
+  const CLIENT_ID = "1c9856cb829c429e856cefb2b0d8da5a"; // This is a public client ID for application
+  const CLIENT_SECRET = "a56ef64f9de04ca2a99d5f2a4daaafea"; // This is a public client secret for demo purposes
 
   // Authenticate on component mount if needed
   useEffect(() => {
@@ -57,6 +57,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
         });
       }
     } catch (error) {
+      console.error("Authentication error:", error);
       setIsAuthenticating(false);
       toast({
         title: "API Connection Failed",
