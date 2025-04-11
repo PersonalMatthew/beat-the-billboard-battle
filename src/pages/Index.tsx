@@ -163,16 +163,6 @@ const Index = () => {
         <p className="text-white text-lg mb-8 text-center max-w-2xl">
           Guess which artist has more monthly Spotify listeners. How far can you go?
         </p>
-
-        {!spotifyConnected ? (
-          <div className="mb-6 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-md text-yellow-300 text-sm max-w-2xl text-center">
-            <p>⚠️ Using mock data. Connect Spotify API for real artist data.</p>
-          </div>
-        ) : (
-          <div className="mb-6 p-3 bg-green-900/40 border border-green-700/50 rounded-md text-green-300 text-sm max-w-2xl text-center">
-            <p>✅ Using real Spotify data!</p>
-          </div>
-        )}
         
         <ScoreDisplay currentScore={score} />
         
