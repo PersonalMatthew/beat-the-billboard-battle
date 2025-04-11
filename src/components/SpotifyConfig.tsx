@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface SpotifyConfigProps {
   onAuthenticated?: () => void;
@@ -15,9 +16,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     return localStorage.getItem('spotify_access_token') !== null && !needsTokenRefresh();
   });
 
-  // Real Spotify API credentials (client ID is public)
-  const CLIENT_ID = "1c9856cb829c429e856cefb2b0d8da5a"; // This is a public client ID for application
-  const CLIENT_SECRET = "a56ef64f9de04ca2a99d5f2a4daaafea"; // This is a public client secret for demo purposes
+  // Spotify API credentials - these are demo credentials and can be public
+  const CLIENT_ID = "1c9856cb829c429e856cefb2b0d8da5a";
+  const CLIENT_SECRET = "a56ef64f9de04ca2a99d5f2a4daaafea";
 
   // Authenticate on component mount if needed
   useEffect(() => {
@@ -36,6 +37,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     setIsAuthenticating(true);
     
     try {
+      localStorage.removeItem('spotify_access_token'); // Clear any existing token first
       const token = await authenticateSpotify(CLIENT_ID, CLIENT_SECRET);
       setIsAuthenticating(false);
       
@@ -67,6 +69,10 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     }
   };
 
+  const handleManualAuthenticate = () => {
+    handleAuthenticate();
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -89,8 +95,17 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
             <p>✅ Spotify API connected successfully!</p>
           </div>
         ) : (
-          <div className="bg-red-900/40 border border-red-700/50 rounded-md p-3 text-red-300">
-            <p>❌ Not connected to Spotify API. Attempting to connect automatically...</p>
+          <div className="flex flex-col gap-4">
+            <div className="bg-red-900/40 border border-red-700/50 rounded-md p-3 text-red-300">
+              <p>❌ Not connected to Spotify API.</p>
+            </div>
+            <Button 
+              onClick={handleManualAuthenticate} 
+              className="w-full bg-spotify-green hover:bg-spotify-green/80"
+              disabled={isAuthenticating}
+            >
+              {isAuthenticating ? "Connecting..." : "Connect to Spotify API"}
+            </Button>
           </div>
         )}
       </CardContent>

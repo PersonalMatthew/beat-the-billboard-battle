@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { Navigate, Link } from "react-router-dom";
 import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import GameOverScreen from "@/components/GameOverScreen";
 import GameModeSelector from "@/components/GameModeSelector";
 import { Artist } from "@/utils/mockData";
+import { Button } from "@/components/ui/button";
+import { LogOut, Settings } from "lucide-react";
 import { 
   getArtistPair, 
   checkGuess, 
@@ -14,7 +17,7 @@ import {
   markDailyAsCompleted,
   prefetchDailyArtists
 } from "@/utils/gameLogic";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import SpotifyConfig from "@/components/SpotifyConfig";
 
 const Index = () => {
@@ -33,8 +36,19 @@ const Index = () => {
   const [gameMode, setGameMode] = useState<"daily" | "streak" | null>(null);
   const [dailyPairIndex, setDailyPairIndex] = useState<number>(0);
   const [dailyCompleted, setDailyCompleted] = useState<boolean>(false);
+  const [user, setUser] = useState<{ username: string } | null>(null);
   
   useEffect(() => {
+    const userDataString = localStorage.getItem('user');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        setUser(userData);
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+
     const spotifyStatus = isSpotifyAuthorized();
     setSpotifyConnected(spotifyStatus);
     
@@ -210,6 +224,19 @@ const Index = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
+    });
+    window.location.href = "/login";
+  };
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (!spotifyConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
@@ -220,11 +247,11 @@ const Index = () => {
           </p>
           
           <div className="w-full max-w-md mx-auto bg-spotify-darkgray p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-spotify-green mb-4">Connecting to Spotify API</h2>
+            <h2 className="text-2xl font-semibold text-spotify-green mb-4">Connecting to Spotify API</h2>
             <p className="text-white mb-6">
               Please wait while we connect to the Spotify API to fetch artist data...
             </p>
-            <SpotifyConfig onAuthenticated={handleSpotifyConnected} />
+            <SpotifyConfig onAuthenticated={() => setSpotifyConnected(true)} />
           </div>
         </div>
         
@@ -238,6 +265,22 @@ const Index = () => {
   if (gameMode === null) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
+        <div className="flex w-full justify-between items-center px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-white font-medium">Welcome, {user.username}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link to="/config">
+              <Button size="sm" variant="ghost" className="text-white">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Button size="sm" variant="ghost" className="text-white" onClick={handleLogout}>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
         <div className="w-full flex flex-col items-center">
           <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
           <p className="text-white text-lg mb-8 text-center max-w-2xl">
@@ -277,6 +320,22 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
+      <div className="flex w-full justify-between items-center px-4 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-white font-medium">Welcome, {user.username}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to="/config">
+            <Button size="sm" variant="ghost" className="text-white">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Button size="sm" variant="ghost" className="text-white" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       <div className="w-full flex flex-col items-center">
         <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
         <p className="text-white text-lg mb-8 text-center max-w-2xl">
