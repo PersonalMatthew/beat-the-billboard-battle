@@ -16,6 +16,7 @@ import {
   prefetchDailyArtists
 } from "@/utils/gameLogic";
 import { useToast } from "@/components/ui/use-toast";
+import SpotifyConfig from "@/components/SpotifyConfig";
 
 const Index = () => {
   const { toast } = useToast();
@@ -42,22 +43,31 @@ const Index = () => {
     // Start prefetching daily artists immediately for faster loading later
     if (spotifyStatus) {
       prefetchDailyArtists().catch(err => console.error("Failed to prefetch:", err));
-    }
-    
-    // Check if daily challenge is already completed
-    const isCompleted = getDailyCompletionStatus();
-    setDailyCompleted(isCompleted);
-    
-    // If we have a stored game mode, use it
-    const storedMode = localStorage.getItem('selectedGameMode');
-    if (storedMode === "daily" || storedMode === "streak") {
-      setGameMode(storedMode);
-      startNewRound(storedMode);
+      
+      // Check if daily challenge is already completed
+      const isCompleted = getDailyCompletionStatus();
+      setDailyCompleted(isCompleted);
+      
+      // If we have a stored game mode, use it
+      const storedMode = localStorage.getItem('selectedGameMode');
+      if (storedMode === "daily" || storedMode === "streak") {
+        setGameMode(storedMode);
+        startNewRound(storedMode);
+      }
     }
   }, []);
 
   // Start a new round - passing the current score for difficulty adjustment
   const startNewRound = async (mode: "daily" | "streak" = "streak") => {
+    if (!isSpotifyAuthorized()) {
+      toast({
+        title: "Spotify Connection Required",
+        description: "Please connect to Spotify to play the game.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     setLoadAttempts(prev => prev + 1);
     
@@ -96,22 +106,41 @@ const Index = () => {
     } catch (error) {
       console.error("Error getting artist pair:", error);
       toast({
-        title: "Error",
-        description: "There was a problem loading artists.",
+        title: "Spotify Authentication Required",
+        description: "Please connect your Spotify account to play.",
         variant: "destructive",
       });
       setLoading(false);
+      setGameMode(null);
     }
   };
 
   // Handle selecting a game mode
   const handleSelectMode = (mode: "daily" | "streak") => {
+    if (!isSpotifyAuthorized()) {
+      toast({
+        title: "Spotify Connection Required",
+        description: "Please connect to Spotify to play the game.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setGameMode(mode);
     setScore(0);
     setGameOver(false);
     setDailyPairIndex(0);
     localStorage.setItem('selectedGameMode', mode);
     startNewRound(mode);
+  };
+
+  // Handle Spotify connection state change
+  const handleSpotifyConnected = () => {
+    setSpotifyConnected(true);
+    toast({
+      title: "Spotify Connected",
+      description: "Successfully connected to Spotify API!",
+    });
   };
 
   // Go back to mode selection
@@ -200,6 +229,34 @@ const Index = () => {
       startNewRound(gameMode || "streak");
     }
   };
+
+  // If Spotify is not connected, show the config screen
+  if (!spotifyConnected) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
+        <div className="w-full flex flex-col items-center">
+          <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
+          <p className="text-white text-lg mb-8 text-center max-w-2xl">
+            Connect to Spotify to play with real artist data
+          </p>
+          
+          <div className="w-full max-w-md mx-auto bg-spotify-darkgray p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold text-spotify-green mb-4">Spotify Authentication Required</h2>
+            <p className="text-white mb-6">
+              This game requires Spotify API access to get real artist data. 
+              Please connect your Spotify developer account below.
+            </p>
+            <SpotifyConfig onAuthenticated={handleSpotifyConnected} />
+          </div>
+        </div>
+        
+        {/* Footer */}
+        <footer className="w-full py-4 text-center text-white/50 text-sm mt-auto">
+          <p>By PersonalMatthew 2025</p>
+        </footer>
+      </div>
+    );
+  }
 
   // If game mode is not selected yet, show the mode selector
   if (gameMode === null) {

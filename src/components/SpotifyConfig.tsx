@@ -1,22 +1,30 @@
 
-import { useState } from "react";
-import { authenticateSpotify, updateArtistWithSpotifyData, needsTokenRefresh } from "@/utils/mockData";
+import { useState, useEffect } from "react";
+import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-const SpotifyConfig = () => {
+interface SpotifyConfigProps {
+  onAuthenticated?: () => void;
+}
+
+const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   const { toast } = useToast();
   const [clientId, setClientId] = useState<string>("");
   const [clientSecret, setClientSecret] = useState<string>("");
-  const [artistId, setArtistId] = useState<string>("");
-  const [artistPosition, setArtistPosition] = useState<string>("0");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('spotify_access_token') !== null && !needsTokenRefresh();
   });
+
+  // Check auth state on component mount
+  useEffect(() => {
+    if (isAuthenticated && onAuthenticated) {
+      onAuthenticated();
+    }
+  }, [isAuthenticated, onAuthenticated]);
 
   const handleAuthenticate = async () => {
     if (!clientId || !clientSecret) {
@@ -38,6 +46,10 @@ const SpotifyConfig = () => {
         title: "Authentication Successful",
         description: "Successfully authenticated with Spotify API",
       });
+      
+      if (onAuthenticated) {
+        onAuthenticated();
+      }
     } else {
       toast({
         title: "Authentication Failed",
@@ -47,47 +59,10 @@ const SpotifyConfig = () => {
     }
   };
 
-  const handleUpdateArtist = async () => {
-    if (!artistId || artistPosition === "") {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both Artist ID and position",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isAuthenticated) {
-      toast({
-        title: "Not Authenticated",
-        description: "Please authenticate with Spotify first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUpdating(true);
-    const success = await updateArtistWithSpotifyData(parseInt(artistPosition), artistId);
-    setIsUpdating(false);
-
-    if (success) {
-      toast({
-        title: "Artist Updated",
-        description: `Successfully updated artist at position ${artistPosition}`,
-      });
-    } else {
-      toast({
-        title: "Update Failed",
-        description: "Failed to update artist. Check the artist ID and position.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Spotify API Configuration</CardTitle>
+        <CardTitle>Spotify API Connection</CardTitle>
         <CardDescription>
           Enter your Spotify API credentials to fetch real artist data
         </CardDescription>
@@ -126,49 +101,10 @@ const SpotifyConfig = () => {
         >
           {isAuthenticating ? "Authenticating..." : isAuthenticated ? "Re-Authenticate" : "Authenticate"}
         </Button>
-
-        {isAuthenticated && (
-          <>
-            <div className="h-px bg-border my-4" />
-            <div className="space-y-2">
-              <label htmlFor="artistId" className="text-sm font-medium">
-                Spotify Artist ID
-              </label>
-              <Input
-                id="artistId"
-                value={artistId}
-                onChange={(e) => setArtistId(e.target.value)}
-                placeholder="e.g., 06HL4z0CvFAxyc27GXpf02"
-                disabled={isUpdating}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="position" className="text-sm font-medium">
-                Position to Replace (0-19)
-              </label>
-              <Input
-                id="position"
-                type="number"
-                min="0"
-                max="19"
-                value={artistPosition}
-                onChange={(e) => setArtistPosition(e.target.value)}
-                placeholder="Enter position (0-19)"
-                disabled={isUpdating}
-              />
-            </div>
-            <Button 
-              onClick={handleUpdateArtist} 
-              className="w-full" 
-              disabled={isUpdating || !artistId || artistPosition === ""}
-            >
-              {isUpdating ? "Updating..." : "Update Artist"}
-            </Button>
-          </>
-        )}
       </CardContent>
-      <CardFooter className="flex justify-center text-xs text-muted-foreground">
-        Find artist IDs in Spotify URLs or using the Spotify Web API
+      <CardFooter className="flex flex-col gap-2 items-center text-xs text-muted-foreground">
+        <p>Get your API credentials from the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline text-spotify-green">Spotify Developer Dashboard</a></p>
+        <p className="text-center">This app uses the Spotify Web API to fetch real artist data. No user login required.</p>
       </CardFooter>
     </Card>
   );
