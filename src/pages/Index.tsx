@@ -46,13 +46,14 @@ const Index = () => {
     }
   }, []);
 
-  // Start a new round
+  // Start a new round - passing the current score for difficulty adjustment
   const startNewRound = async () => {
     setLoading(true);
     setLoadAttempts(prev => prev + 1);
     
     try {
-      const newArtistPair = await getArtistPair();
+      // Pass the current score to getArtistPair for difficulty adjustment
+      const newArtistPair = await getArtistPair(score);
       
       // Validate the artist data
       if (newArtistPair[0].name && newArtistPair[1].name) {

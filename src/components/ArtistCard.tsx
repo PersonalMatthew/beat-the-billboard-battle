@@ -32,7 +32,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         : "bg-spotify-lightgray";
   };
 
-  // Handle image load error with more robust fallback mechanism
+  // Enhanced image error handling with more robust fallback mechanism
   const handleImageError = () => {
     console.log(`Image failed to load for artist: ${artist.name}`, imageUrl);
     
@@ -42,8 +42,23 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
     } else if (imageUrl.includes('.png')) {
       setImageUrl(imageUrl.replace('.png', '.webp'));
     } else if (imageUrl.includes('i.scdn.co')) {
-      // Try an alternate Spotify image URL pattern if available
-      setImageUrl(`https://i.scdn.co/image/ab6761610000e5eb${imageUrl.split('image/')[1]}`);
+      // Try alternate Spotify image URL patterns
+      if (imageUrl.includes('/ab6761610000e5eb')) {
+        // Try different image size format
+        setImageUrl(imageUrl.replace('/ab6761610000e5eb', '/ab67616100005174'));
+      } else if (imageUrl.includes('/ab67616100005174')) {
+        // Try another image size format
+        setImageUrl(imageUrl.replace('/ab67616100005174', '/ab6761610000f178'));
+      } else {
+        // Try to extract the image ID if possible
+        const parts = imageUrl.split('/');
+        const lastPart = parts[parts.length - 1];
+        if (lastPart && lastPart.length > 5) {
+          setImageUrl(`https://i.scdn.co/image/ab6761610000e5eb${lastPart}`);
+        } else {
+          setImageError(true);
+        }
+      }
     } else {
       // Use a placeholder if all attempts fail
       setImageError(true);
@@ -62,7 +77,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
       className={`artist-card relative rounded-lg p-6 shadow-lg ${getBgClass()} flex flex-col items-center justify-between h-full transition-all duration-300`}
     >
       <div className="w-full flex flex-col items-center justify-center">
-        {/* Artist Image with better error handling */}
+        {/* Artist Image with enhanced error handling */}
         <div className="relative w-48 h-48 mb-4 overflow-hidden rounded-full border-4 border-spotify-green">
           <Avatar className="w-full h-full">
             {!imageError && (
@@ -82,7 +97,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         </div>
         
         {/* Artist Name */}
-        <h2 className="text-2xl font-bold text-white mb-2">{artist.name || "Unknown Artist"}</h2>
+        <h2 className="text-2xl font-bold text-white mb-2 text-center">{artist.name || "Unknown Artist"}</h2>
         
         {/* Artist Genres - Adding null check before accessing 'slice' */}
         <div className="flex flex-wrap justify-center gap-2 mb-4">
