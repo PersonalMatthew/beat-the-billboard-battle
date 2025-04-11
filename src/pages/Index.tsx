@@ -154,6 +154,8 @@ const Index = () => {
   const handleBackToModeSelect = () => {
     setGameMode(null);
     localStorage.removeItem('selectedGameMode');
+    setScore(0);
+    setGameOver(false);
   };
 
   const handleSelectArtist = (selected: Artist, other: Artist) => {
@@ -267,7 +269,7 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
         <div className="flex w-full justify-between items-center px-4 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-white font-medium">Welcome, {user.username}</span>
+            <span className="text-white font-medium">Welcome, {user?.username || "Developer"}</span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/config">

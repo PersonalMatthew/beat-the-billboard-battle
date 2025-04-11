@@ -36,6 +36,8 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           await handleAuthenticate();
         }
       } else if (isAuthenticated && onAuthenticated) {
+        // Clear any previous game mode selection
+        localStorage.removeItem('selectedGameMode');
         onAuthenticated();
       }
     };
@@ -48,6 +50,8 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     
     try {
       localStorage.removeItem('spotify_access_token'); // Clear any existing token first
+      localStorage.removeItem('selectedGameMode'); // Clear any game mode selection
+      
       const token = await authenticateSpotify(clientId, clientSecret);
       setIsAuthenticating(false);
       

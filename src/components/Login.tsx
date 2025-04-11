@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,9 @@ const Login = () => {
     localStorage.setItem("spotify_client_id", data.clientId);
     localStorage.setItem("spotify_client_secret", data.clientSecret);
     
+    // Remove any previously selected game mode
+    localStorage.removeItem('selectedGameMode');
+    
     // Set developer mode
     localStorage.setItem("developer_mode", "true");
     
@@ -66,6 +68,12 @@ const Login = () => {
           description: "Successfully connected to Spotify API with your credentials.",
         });
         
+        // Create simple user object
+        const userObj = {
+          username: "Developer"
+        };
+        localStorage.setItem('user', JSON.stringify(userObj));
+        
         // Navigate to the game
         navigate("/");
       }, 1500);
@@ -87,6 +95,18 @@ const Login = () => {
       title: "Spotify Connected",
       description: "Successfully connected to Spotify API!",
     });
+    
+    // Create simple user object
+    const userObj = {
+      username: "Developer"
+    };
+    localStorage.setItem('user', JSON.stringify(userObj));
+    
+    // Clear any previously selected game mode
+    localStorage.removeItem('selectedGameMode');
+    
+    // Navigate to the game mode selection
+    navigate("/");
   };
 
   return (
