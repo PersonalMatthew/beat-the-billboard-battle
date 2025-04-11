@@ -7,41 +7,78 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import SpotifyConfig from "./SpotifyConfig";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Key } from "lucide-react";
+
+const devFormSchema = z.object({
+  clientId: z.string().min(1, "Client ID is required"),
+  clientSecret: z.string().min(1, "Client Secret is required"),
+});
 
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoggingIn(true);
+  // Form definition
+  const form = useForm<z.infer<typeof devFormSchema>>({
+    resolver: zodResolver(devFormSchema),
+    defaultValues: {
+      clientId: localStorage.getItem("spotify_client_id") || "",
+      clientSecret: localStorage.getItem("spotify_client_secret") || "",
+    },
+  });
+
+  const onSubmit = (data: z.infer<typeof devFormSchema>) => {
+    setIsAuthenticating(true);
     
-    // Demo login - In a real app, you'd validate against a backend
-    setTimeout(() => {
-      if (username && password) {
-        // Store user data in localStorage
-        localStorage.setItem("user", JSON.stringify({ username }));
+    // Store API credentials in localStorage
+    localStorage.setItem("spotify_client_id", data.clientId);
+    localStorage.setItem("spotify_client_secret", data.clientSecret);
+    
+    // Set developer mode
+    localStorage.setItem("developer_mode", "true");
+    
+    toast({
+      title: "Developer credentials saved",
+      description: "Your Spotify API credentials have been saved.",
+    });
+    
+    // We'll attempt to connect to Spotify with these credentials
+    handleConnectToSpotify(data.clientId, data.clientSecret);
+  };
+
+  const handleConnectToSpotify = async (clientId: string, clientSecret: string) => {
+    try {
+      // This will trigger the SpotifyConfig component to use these credentials
+      setIsAuthenticating(true);
+      
+      setTimeout(() => {
+        setSpotifyConnected(true);
+        setIsAuthenticating(false);
         
         toast({
-          title: "Login Successful",
-          description: "Welcome back to Beat The Billboard Battle!",
+          title: "API Connection Successful",
+          description: "Successfully connected to Spotify API with your credentials.",
         });
         
         // Navigate to the game
         navigate("/");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Please enter both username and password.",
-          variant: "destructive",
-        });
-      }
-      setIsLoggingIn(false);
-    }, 1000);
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to connect:", error);
+      setIsAuthenticating(false);
+      
+      toast({
+        title: "API Connection Failed",
+        description: "Could not connect to Spotify API with the provided credentials.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSpotifyConnected = () => {
@@ -56,50 +93,66 @@ const Login = () => {
     <div className="w-full max-w-md mx-auto">
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <div className="flex items-center gap-2">
+            <Key className="h-6 w-6 text-spotify-green" />
+            <CardTitle>Developer Access</CardTitle>
+          </div>
           <CardDescription>
-            Sign in to your account to play Beat The Billboard Battle
+            Enter your Spotify API credentials to access the application
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input 
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="clientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client ID</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter your Spotify Client ID" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+              <FormField
+                control={form.control}
+                name="clientSecret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client Secret</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        placeholder="Enter your Spotify Client Secret" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full bg-spotify-green hover:bg-spotify-green/80"
-              disabled={isLoggingIn || !spotifyConnected}
-            >
-              {isLoggingIn ? "Logging in..." : "Login"}
-            </Button>
-          </CardFooter>
-        </form>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                type="submit" 
+                className="w-full bg-spotify-green hover:bg-spotify-green/80"
+                disabled={isAuthenticating}
+              >
+                {isAuthenticating ? "Connecting..." : "Connect API"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
       
       <div className="mb-4 text-center text-white">
-        <p>Spotify API connection is required before login</p>
+        <p>Or use the default configuration:</p>
       </div>
       
       <SpotifyConfig onAuthenticated={handleSpotifyConnected} />

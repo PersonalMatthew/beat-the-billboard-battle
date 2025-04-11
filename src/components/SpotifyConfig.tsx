@@ -23,8 +23,18 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   // Authenticate on component mount if needed
   useEffect(() => {
     const checkAndAuthenticate = async () => {
+      // Check if we have developer provided credentials
+      const devClientId = localStorage.getItem("spotify_client_id");
+      const devClientSecret = localStorage.getItem("spotify_client_secret");
+      
       if (!isAuthenticated && !isAuthenticating) {
-        await handleAuthenticate();
+        if (devClientId && devClientSecret) {
+          // Use developer credentials
+          await handleAuthenticate(devClientId, devClientSecret);
+        } else {
+          // Use default credentials
+          await handleAuthenticate();
+        }
       } else if (isAuthenticated && onAuthenticated) {
         onAuthenticated();
       }
@@ -33,12 +43,12 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     checkAndAuthenticate();
   }, [isAuthenticated, onAuthenticated]);
 
-  const handleAuthenticate = async () => {
+  const handleAuthenticate = async (clientId = CLIENT_ID, clientSecret = CLIENT_SECRET) => {
     setIsAuthenticating(true);
     
     try {
       localStorage.removeItem('spotify_access_token'); // Clear any existing token first
-      const token = await authenticateSpotify(CLIENT_ID, CLIENT_SECRET);
+      const token = await authenticateSpotify(clientId, clientSecret);
       setIsAuthenticating(false);
       
       if (token) {
@@ -70,19 +80,20 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   };
 
   const handleManualAuthenticate = () => {
+    // Use default credentials for the default button
     handleAuthenticate();
   };
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Spotify API Status</CardTitle>
+        <CardTitle>Default Configuration</CardTitle>
         <CardDescription>
           {isAuthenticated 
             ? "Connected to Spotify API" 
             : isAuthenticating 
               ? "Connecting to Spotify API..." 
-              : "Not connected to Spotify API"}
+              : "Use default API credentials"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -96,15 +107,15 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="bg-red-900/40 border border-red-700/50 rounded-md p-3 text-red-300">
-              <p>❌ Not connected to Spotify API.</p>
+            <div className="bg-yellow-900/40 border border-yellow-700/50 rounded-md p-3 text-yellow-300">
+              <p>⚠️ Using default Spotify API configuration.</p>
             </div>
             <Button 
               onClick={handleManualAuthenticate} 
               className="w-full bg-spotify-green hover:bg-spotify-green/80"
               disabled={isAuthenticating}
             >
-              {isAuthenticating ? "Connecting..." : "Connect to Spotify API"}
+              {isAuthenticating ? "Connecting..." : "Use Default Configuration"}
             </Button>
           </div>
         )}

@@ -13,11 +13,12 @@ import { useEffect, useState } from "react";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isApiConnected, setIsApiConnected] = useState(false);
   
   useEffect(() => {
-    const user = localStorage.getItem('user');
-    setIsLoggedIn(!!user);
+    // Check if Spotify API is connected
+    const token = localStorage.getItem('spotify_access_token');
+    setIsApiConnected(!!token);
   }, []);
 
   return (
@@ -29,7 +30,7 @@ const App = () => {
           <Routes>
             <Route 
               path="/" 
-              element={isLoggedIn ? <Index /> : <Navigate to="/login" replace />} 
+              element={isApiConnected ? <Index /> : <Navigate to="/login" replace />} 
             />
             <Route path="/login" element={<Login />} />
             <Route path="/config" element={<Config />} />

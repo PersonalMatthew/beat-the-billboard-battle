@@ -7,7 +7,7 @@ const LoginPage = () => {
       <div className="w-full flex flex-col items-center">
         <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
         <p className="text-white text-lg mb-8 text-center max-w-2xl">
-          Log in to play and test your knowledge of music popularity!
+          Developer Access - Connect your Spotify API credentials
         </p>
         
         <Login />
