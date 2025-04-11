@@ -14,15 +14,28 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [isApiConnected, setIsApiConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Check if Spotify API is connected
     const token = localStorage.getItem('spotify_access_token');
-    setIsApiConnected(!!token);
+    const user = localStorage.getItem('user');
+    
+    setIsApiConnected(!!token && !!user);
+    setIsLoading(false);
     
     // Log the current state for debugging
     console.log("API Connected state:", !!token);
+    console.log("User state:", !!user);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-spotify-black">
+        <div className="animate-spin w-12 h-12 border-4 border-spotify-green border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -33,7 +46,7 @@ const App = () => {
           <Routes>
             <Route 
               path="/" 
-              element={<Index />}
+              element={isApiConnected ? <Index /> : <Navigate to="/login" />}
             />
             <Route path="/login" element={<Login />} />
             <Route path="/config" element={<Config />} />
