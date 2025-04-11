@@ -33,7 +33,7 @@ const App = () => {
           <Routes>
             <Route 
               path="/" 
-              element={isApiConnected ? <Index /> : <Navigate to="/login" replace />} 
+              element={<Index />}
             />
             <Route path="/login" element={<Login />} />
             <Route path="/config" element={<Config />} />

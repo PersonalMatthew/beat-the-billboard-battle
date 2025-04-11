@@ -74,8 +74,9 @@ const Login = () => {
         };
         localStorage.setItem('user', JSON.stringify(userObj));
         
-        // Navigate to the game using window.location for a full refresh
-        window.location.href = "/";
+        // Navigate to the game using hard redirect
+        console.log("Redirecting from Login component");
+        window.location.replace("/");
       }, 1500);
     } catch (error) {
       console.error("Failed to connect:", error);
@@ -105,8 +106,9 @@ const Login = () => {
     // Clear any previously selected game mode
     localStorage.removeItem('selectedGameMode');
     
-    // Navigate to the game using window.location for a full refresh
-    window.location.href = "/";
+    // Navigate using hard redirect
+    console.log("Redirecting after Spotify connected");
+    window.location.replace("/");
   };
 
   return (

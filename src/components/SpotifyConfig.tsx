@@ -77,8 +77,8 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
           setNotifiedAuthenticated(true);
           onAuthenticated();
         } else {
-          // If no callback is provided, navigate to home
-          navigate("/");
+          // If no callback is provided, redirect directly
+          window.location.href = "/";
         }
       } else {
         toast({
@@ -104,6 +104,8 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   };
 
   const handleGoToHome = () => {
+    console.log("Go to home button clicked");
+    
     // Create user object if it doesn't exist
     if (!localStorage.getItem('user')) {
       const userObj = { username: "Developer" };
@@ -120,9 +122,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
       return;
     }
     
-    // Force navigation to home using window.location for a full refresh
-    console.log("Navigating to home using window.location...");
-    window.location.href = "/";
+    // Force hard redirect to home page
+    console.log("Redirecting to home page");
+    window.location.replace("/");
   };
 
   return (
