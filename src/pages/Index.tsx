@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
@@ -11,7 +12,8 @@ import {
   getHighScore, 
   isSpotifyAuthorized,
   getDailyCompletionStatus,
-  markDailyAsCompleted
+  markDailyAsCompleted,
+  prefetchDailyArtists
 } from "@/utils/gameLogic";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -32,10 +34,15 @@ const Index = () => {
   const [dailyPairIndex, setDailyPairIndex] = useState<number>(0);
   const [dailyCompleted, setDailyCompleted] = useState<boolean>(false);
   
-  // Initialize the game
+  // Initialize the game and prefetch data
   useEffect(() => {
     const spotifyStatus = isSpotifyAuthorized();
     setSpotifyConnected(spotifyStatus);
+    
+    // Start prefetching daily artists immediately for faster loading later
+    if (spotifyStatus) {
+      prefetchDailyArtists().catch(err => console.error("Failed to prefetch:", err));
+    }
     
     // Check if daily challenge is already completed
     const isCompleted = getDailyCompletionStatus();

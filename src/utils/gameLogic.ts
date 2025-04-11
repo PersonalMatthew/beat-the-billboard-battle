@@ -1,10 +1,22 @@
 import { Artist, artists, fetchArtistFromSpotify, needsTokenRefresh } from "./mockData";
 
+// Cache for daily artists to improve performance
+const dailyArtistsCache = {
+  date: '',
+  artists: [] as Artist[]
+};
+
 // Generate artists for Daily Challenge mode using Spotify API
 export async function getDailyArtists(): Promise<Artist[]> {
   // Use the current date as a seed for selecting artists
   const today = new Date();
   const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  
+  // Check if we already have cached data for today
+  if (dailyArtistsCache.date === dateString && dailyArtistsCache.artists.length >= 20) {
+    console.log("Using cached daily artists");
+    return dailyArtistsCache.artists;
+  }
   
   // Create a simple hash from the date string to use as our seed
   let seed = 0;
@@ -47,6 +59,10 @@ export async function getDailyArtists(): Promise<Artist[]> {
         }
       }
       
+      // Update cache
+      dailyArtistsCache.date = dateString;
+      dailyArtistsCache.artists = dailyArtists;
+      
       return dailyArtists;
     } catch (error) {
       console.error("Error fetching daily artists from Spotify:", error);
@@ -54,7 +70,13 @@ export async function getDailyArtists(): Promise<Artist[]> {
   }
   
   // Fall back to using seeded mock data if Spotify API fails
-  return getSeededMockArtists(seed);
+  const fallbackArtists = getSeededMockArtists(seed);
+  
+  // Update cache with fallback data
+  dailyArtistsCache.date = dateString;
+  dailyArtistsCache.artists = fallbackArtists;
+  
+  return fallbackArtists;
 }
 
 // Get seeded random mock artists as fallback
@@ -455,7 +477,7 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
   // For daily mode, get the pre-determined pairs from Spotify API
   if (gameMode === "daily" && typeof pairIndex === "number") {
     try {
-      // Get daily artists using Spotify API
+      // Get daily artists using Spotify API (now with caching)
       const dailyArtists = await getDailyArtists();
       
       // Make sure we have enough artists
@@ -630,4 +652,15 @@ export function markDailyAsCompleted(): void {
 export function isSpotifyAuthorized(): boolean {
   const accessToken = localStorage.getItem('spotify_access_token');
   return accessToken !== null && !needsTokenRefresh();
+}
+
+// Prefetch daily artists in the background for faster loading
+export async function prefetchDailyArtists(): Promise<void> {
+  console.log("Prefetching daily artists...");
+  try {
+    await getDailyArtists();
+    console.log("Daily artists prefetched successfully");
+  } catch (error) {
+    console.error("Error prefetching daily artists:", error);
+  }
 }
