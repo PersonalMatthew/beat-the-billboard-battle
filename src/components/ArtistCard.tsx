@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/gameLogic";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { UserIcon } from "lucide-react";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -15,10 +16,12 @@ interface ArtistCardProps {
 const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(artist.imageUrl || '');
+  const [fallbackAttempts, setFallbackAttempts] = useState(0);
   
   // Reset image error state when artist changes
   useEffect(() => {
     setImageError(false);
+    setFallbackAttempts(0);
     setImageUrl(artist.imageUrl || '');
   }, [artist.id, artist.imageUrl]);
   
@@ -36,6 +39,15 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
   const handleImageError = () => {
     console.log(`Image failed to load for artist: ${artist.name}`, imageUrl);
     
+    // Prevent infinite fallback attempts
+    if (fallbackAttempts >= 3) {
+      console.log("Max fallback attempts reached, using placeholder");
+      setImageError(true);
+      return;
+    }
+    
+    setFallbackAttempts(prev => prev + 1);
+    
     // Try different image formats or fallback to a different source
     if (imageUrl.includes('.jpg')) {
       setImageUrl(imageUrl.replace('.jpg', '.png'));
@@ -50,14 +62,8 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         // Try another image size format
         setImageUrl(imageUrl.replace('/ab67616100005174', '/ab6761610000f178'));
       } else {
-        // Try to extract the image ID if possible
-        const parts = imageUrl.split('/');
-        const lastPart = parts[parts.length - 1];
-        if (lastPart && lastPart.length > 5) {
-          setImageUrl(`https://i.scdn.co/image/ab6761610000e5eb${lastPart}`);
-        } else {
-          setImageError(true);
-        }
+        // If we can't fix the URL pattern, use fallback
+        setImageError(true);
       }
     } else {
       // Use a placeholder if all attempts fail
@@ -67,7 +73,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
 
   // Get fallback content with artist initial or icon
   const getFallbackContent = () => {
-    if (!artist.name) return "?";
+    if (!artist.name) return <UserIcon className="h-12 w-12 text-white" />;
     const initial = artist.name.charAt(0).toUpperCase();
     return initial;
   };
@@ -83,7 +89,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
             {!imageError && (
               <AvatarImage 
                 src={imageUrl} 
-                alt={artist.name}
+                alt={artist.name || "Artist"}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
               />
