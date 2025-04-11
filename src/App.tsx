@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Config from "./pages/Config";
@@ -25,8 +25,7 @@ const App = () => {
     setIsLoading(false);
     
     // Log the current state for debugging
-    console.log("API Connected state:", !!token);
-    console.log("User state:", !!user);
+    console.log("App.tsx - Auth check:", { hasToken: !!token, hasUser: !!user });
   }, []);
 
   if (isLoading) {
@@ -44,10 +43,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route 
-              path="/" 
-              element={isApiConnected ? <Index /> : <Navigate to="/login" />}
-            />
+            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/config" element={<Config />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

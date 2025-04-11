@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,6 @@ const devFormSchema = z.object({
 
 const Login = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
 
@@ -34,7 +32,7 @@ const Login = () => {
 
   const onSubmit = (data: z.infer<typeof devFormSchema>) => {
     setIsAuthenticating(true);
-    console.log("Submitting developer credentials");
+    console.log("Login - Submitting developer credentials");
     
     // Store API credentials in localStorage
     localStorage.setItem("spotify_client_id", data.clientId);
@@ -59,8 +57,9 @@ const Login = () => {
     try {
       // This will trigger the SpotifyConfig component to use these credentials
       setIsAuthenticating(true);
-      console.log("Connecting to Spotify with developer credentials");
+      console.log("Login - Connecting to Spotify with developer credentials");
       
+      // Simulate API connection (this would normally be handled by SpotifyConfig)
       setTimeout(() => {
         setSpotifyConnected(true);
         setIsAuthenticating(false);
@@ -76,14 +75,11 @@ const Login = () => {
         };
         localStorage.setItem('user', JSON.stringify(userObj));
         
-        // Navigate to the game using hard redirect
-        console.log("Redirecting from Login component");
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 500);
+        // Navigate to the game - we'll use the SpotifyConfig to handle this now
+        console.log("Login - Developer auth complete, SpotifyConfig will handle redirect");
       }, 1500);
     } catch (error) {
-      console.error("Failed to connect:", error);
+      console.error("Login - Failed to connect:", error);
       setIsAuthenticating(false);
       
       toast({
@@ -96,27 +92,16 @@ const Login = () => {
 
   const handleSpotifyConnected = () => {
     setSpotifyConnected(true);
-    console.log("Spotify connected callback in Login component");
+    console.log("Login - Spotify connected callback in Login component");
     
     toast({
       title: "Spotify Connected",
       description: "Successfully connected to Spotify API!",
     });
     
-    // Create simple user object
-    const userObj = {
-      username: "Developer"
-    };
-    localStorage.setItem('user', JSON.stringify(userObj));
-    
-    // Clear any previously selected game mode
-    localStorage.removeItem('selectedGameMode');
-    
-    // Navigate using hard redirect
-    console.log("Redirecting after Spotify connected");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 500);
+    // Navigate to home page
+    console.log("Login - Redirecting after Spotify connected");
+    window.location.href = "/";
   };
 
   return (

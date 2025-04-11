@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -13,12 +12,11 @@ interface SpotifyConfigProps {
 
 const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const hasToken = localStorage.getItem('spotify_access_token') !== null;
     const needsRefresh = needsTokenRefresh();
-    console.log("Initial auth state:", { hasToken, needsRefresh });
+    console.log("SpotifyConfig - Initial auth state:", { hasToken, needsRefresh });
     return hasToken && !needsRefresh;
   });
   const [notifiedAuthenticated, setNotifiedAuthenticated] = useState(false);
@@ -34,42 +32,49 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
       const devClientId = localStorage.getItem("spotify_client_id");
       const devClientSecret = localStorage.getItem("spotify_client_secret");
       
+      console.log("SpotifyConfig - Authentication check:", { 
+        isAuthenticated, 
+        isAuthenticating, 
+        notifiedAuthenticated 
+      });
+      
       if (!isAuthenticated && !isAuthenticating) {
         if (devClientId && devClientSecret) {
           // Use developer credentials
-          console.log("Using developer credentials for authentication");
+          console.log("SpotifyConfig - Using developer credentials for authentication");
           await handleAuthenticate(devClientId, devClientSecret);
         } else {
           // Use default credentials
-          console.log("Using default credentials for authentication");
+          console.log("SpotifyConfig - Using default credentials for authentication");
           await handleAuthenticate();
         }
       } else if (isAuthenticated && onAuthenticated && !notifiedAuthenticated) {
         // Clear any previous game mode selection
         localStorage.removeItem('selectedGameMode');
-        console.log("Already authenticated, notifying via callback");
+        console.log("SpotifyConfig - Already authenticated, notifying via callback");
         setNotifiedAuthenticated(true);
         onAuthenticated();
       }
     };
     
     checkAndAuthenticate();
-  }, [isAuthenticated, onAuthenticated, notifiedAuthenticated]);
+  }, [isAuthenticated, onAuthenticated, notifiedAuthenticated, isAuthenticating]);
 
   const handleAuthenticate = async (clientId = CLIENT_ID, clientSecret = CLIENT_SECRET) => {
     setIsAuthenticating(true);
-    console.log("Starting authentication process");
+    console.log("SpotifyConfig - Starting authentication process");
     
     try {
       localStorage.removeItem('spotify_access_token'); // Clear any existing token first
       localStorage.removeItem('selectedGameMode'); // Clear any game mode selection
       
       const token = await authenticateSpotify(clientId, clientSecret);
-      setIsAuthenticating(false);
       
       if (token) {
-        console.log("Authentication successful, setting state");
+        console.log("SpotifyConfig - Authentication successful, setting state");
         setIsAuthenticated(true);
+        setIsAuthenticating(false);
+        
         toast({
           title: "API Connected",
           description: "Successfully connected to Spotify API",
@@ -82,18 +87,13 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
         }
         
         if (onAuthenticated) {
-          console.log("Notifying parent component via callback");
+          console.log("SpotifyConfig - Notifying parent component via callback");
           setNotifiedAuthenticated(true);
           onAuthenticated();
-        } else {
-          // If no callback is provided, redirect directly
-          console.log("No callback provided, redirecting to home page");
-          setTimeout(() => {
-            window.location.href = "/";
-          }, 500);
         }
       } else {
-        console.error("Authentication failed: no token received");
+        setIsAuthenticating(false);
+        console.error("SpotifyConfig - Authentication failed: no token received");
         toast({
           title: "API Connection Failed",
           description: "Failed to connect to Spotify API. Please try again later.",
@@ -101,7 +101,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
         });
       }
     } catch (error) {
-      console.error("Authentication error:", error);
+      console.error("SpotifyConfig - Authentication error:", error);
       setIsAuthenticating(false);
       toast({
         title: "API Connection Failed",
@@ -113,22 +113,16 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
 
   const handleManualAuthenticate = () => {
     // Use default credentials for the default button
-    console.log("Manual authentication requested");
+    console.log("SpotifyConfig - Manual authentication requested");
     handleAuthenticate();
   };
 
   const handleGoToHome = () => {
-    console.log("Go to home button clicked");
-    
-    // Create user object if it doesn't exist
-    if (!localStorage.getItem('user')) {
-      const userObj = { username: "Developer" };
-      localStorage.setItem('user', JSON.stringify(userObj));
-    }
+    console.log("SpotifyConfig - Go to home button clicked");
     
     // Make sure we have a token stored before redirecting
     if (!localStorage.getItem('spotify_access_token')) {
-      console.warn("No access token found, showing toast");
+      console.warn("SpotifyConfig - No access token found, showing toast");
       toast({
         title: "Authentication Required",
         description: "Please connect to Spotify API first",
@@ -137,13 +131,9 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
       return;
     }
     
-    // Force hard redirect to home page
-    console.log("Redirecting to home page");
-    
-    // Use setTimeout to ensure toast is displayed
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 300);
+    // Navigate to home page
+    console.log("SpotifyConfig - Navigating to home page");
+    window.location.href = "/";
   };
 
   return (
