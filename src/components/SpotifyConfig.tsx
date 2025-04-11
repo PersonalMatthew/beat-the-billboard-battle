@@ -5,6 +5,7 @@ import { authenticateSpotify, needsTokenRefresh } from "@/utils/mockData";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 
 interface SpotifyConfigProps {
   onAuthenticated?: () => void;
@@ -126,8 +127,17 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
             <div className="animate-spin w-8 h-8 border-4 border-spotify-green border-t-transparent rounded-full"></div>
           </div>
         ) : isAuthenticated ? (
-          <div className="bg-green-900/40 border border-green-700/50 rounded-md p-3 text-green-300 mb-4">
-            <p>✅ Spotify API connected successfully!</p>
+          <div className="flex flex-col gap-4">
+            <div className="bg-green-900/40 border border-green-700/50 rounded-md p-3 text-green-300">
+              <p>✅ Spotify API connected successfully!</p>
+            </div>
+            <Button 
+              onClick={handleGoToHome}
+              className="w-full bg-spotify-green hover:bg-spotify-green/80 text-lg py-6"
+            >
+              <Home className="mr-2 h-5 w-5" />
+              Go to Game Home
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -143,15 +153,6 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
             </Button>
           </div>
         )}
-        
-        {isAuthenticated && (
-          <Button 
-            onClick={handleGoToHome}
-            className="w-full mt-4 bg-spotify-green hover:bg-spotify-green/80"
-          >
-            Go to Game Home
-          </Button>
-        )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2 items-center text-xs text-muted-foreground">
         <p className="text-center">This app uses the Spotify Web API to fetch real artist data.</p>
@@ -161,4 +162,3 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
 };
 
 export default SpotifyConfig;
-
