@@ -32,25 +32,28 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         : "bg-spotify-lightgray";
   };
 
-  // Handle image load error
+  // Handle image load error with more robust fallback mechanism
   const handleImageError = () => {
-    console.log(`Image failed to load for artist: ${artist.name}`);
-    setImageError(true);
+    console.log(`Image failed to load for artist: ${artist.name}`, imageUrl);
     
-    // Try a different image format or source
+    // Try different image formats or fallback to a different source
     if (imageUrl.includes('.jpg')) {
       setImageUrl(imageUrl.replace('.jpg', '.png'));
     } else if (imageUrl.includes('.png')) {
       setImageUrl(imageUrl.replace('.png', '.webp'));
+    } else if (imageUrl.includes('i.scdn.co')) {
+      // Try an alternate Spotify image URL pattern if available
+      setImageUrl(`https://i.scdn.co/image/ab6761610000e5eb${imageUrl.split('image/')[1]}`);
     } else {
       // Use a placeholder if all attempts fail
       setImageError(true);
     }
   };
 
-  // Get fallback image with artist initial
+  // Get fallback content with artist initial or icon
   const getFallbackContent = () => {
-    const initial = artist.name ? artist.name.charAt(0).toUpperCase() : "?";
+    if (!artist.name) return "?";
+    const initial = artist.name.charAt(0).toUpperCase();
     return initial;
   };
 
@@ -59,7 +62,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
       className={`artist-card relative rounded-lg p-6 shadow-lg ${getBgClass()} flex flex-col items-center justify-between h-full transition-all duration-300`}
     >
       <div className="w-full flex flex-col items-center justify-center">
-        {/* Artist Image */}
+        {/* Artist Image with better error handling */}
         <div className="relative w-48 h-48 mb-4 overflow-hidden rounded-full border-4 border-spotify-green">
           <Avatar className="w-full h-full">
             {!imageError && (
@@ -79,18 +82,24 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
         </div>
         
         {/* Artist Name */}
-        <h2 className="text-2xl font-bold text-white mb-2">{artist.name}</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">{artist.name || "Unknown Artist"}</h2>
         
         {/* Artist Genres - Adding null check before accessing 'slice' */}
         <div className="flex flex-wrap justify-center gap-2 mb-4">
-          {artist.genres && artist.genres.slice(0, 2).map((genre, index) => (
-            <span 
-              key={index} 
-              className="bg-spotify-black bg-opacity-40 text-xs px-2 py-1 rounded-full text-white"
-            >
-              {genre}
+          {artist.genres && artist.genres.length > 0 ? (
+            artist.genres.slice(0, 2).map((genre, index) => (
+              <span 
+                key={index} 
+                className="bg-spotify-black bg-opacity-40 text-xs px-2 py-1 rounded-full text-white"
+              >
+                {genre}
+              </span>
+            ))
+          ) : (
+            <span className="bg-spotify-black bg-opacity-40 text-xs px-2 py-1 rounded-full text-white">
+              Music
             </span>
-          ))}
+          )}
         </div>
       </div>
       
