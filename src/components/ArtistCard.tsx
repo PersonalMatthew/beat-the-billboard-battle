@@ -2,7 +2,7 @@
 import { Artist } from "@/utils/mockData";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/utils/gameLogic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { UserIcon, ImageOff } from "lucide-react";
 
@@ -17,12 +17,14 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
   const [imageError, setImageError] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(artist.imageUrl || '');
   const [fallbackAttempts, setFallbackAttempts] = useState(0);
+  const imageKey = useRef(`${artist.id}-${Date.now()}`); // Add a unique key to bust cache
   
   // Reset image error state when artist changes
   useEffect(() => {
     setImageError(false);
     setFallbackAttempts(0);
     setImageUrl(artist.imageUrl || '');
+    imageKey.current = `${artist.id}-${Date.now()}`; // Update the key
   }, [artist.id, artist.imageUrl]);
 
   // Immediate check for empty or suspicious URLs that often fail
@@ -58,24 +60,29 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
     
     // Try different image formats or fallback to a different source
     if (imageUrl.includes('.jpg')) {
-      setImageUrl(imageUrl.replace('.jpg', '.png'));
+      setImageUrl(`${imageUrl.replace('.jpg', '.png')}?t=${Date.now()}`);
     } else if (imageUrl.includes('.png')) {
-      setImageUrl(imageUrl.replace('.png', '.webp'));
+      setImageUrl(`${imageUrl.replace('.png', '.webp')}?t=${Date.now()}`);
     } else if (imageUrl.includes('i.scdn.co')) {
-      // Try alternate Spotify image URL patterns
+      // Try alternate Spotify image URL patterns with cache busting
       if (imageUrl.includes('/ab6761610000e5eb')) {
         // Try different image size format
-        setImageUrl(imageUrl.replace('/ab6761610000e5eb', '/ab67616100005174'));
+        setImageUrl(`${imageUrl.replace('/ab6761610000e5eb', '/ab67616100005174')}?t=${Date.now()}`);
       } else if (imageUrl.includes('/ab67616100005174')) {
         // Try another image size format
-        setImageUrl(imageUrl.replace('/ab67616100005174', '/ab6761610000f178'));
+        setImageUrl(`${imageUrl.replace('/ab67616100005174', '/ab6761610000f178')}?t=${Date.now()}`);
       } else {
         // If we can't fix the URL pattern, use fallback
         setImageError(true);
       }
     } else {
-      // Use a placeholder if all attempts fail
-      setImageError(true);
+      // Add a cache-busting parameter to the URL
+      setImageUrl(`${imageUrl}?t=${Date.now()}`);
+      
+      // If that still doesn't work on next error, use fallback
+      if (fallbackAttempts >= 2) {
+        setImageError(true);
+      }
     }
   };
 
@@ -96,7 +103,7 @@ const ArtistCard = ({ artist, onSelect, revealed, isCorrect }: ArtistCardProps) 
           <Avatar className="w-full h-full">
             {!imageError && (
               <AvatarImage 
-                src={imageUrl} 
+                src={`${imageUrl}${imageUrl.includes('?') ? '&' : '?'}v=${imageKey.current}`}
                 alt={artist.name || "Artist"}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
