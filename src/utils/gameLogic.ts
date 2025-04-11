@@ -1,7 +1,7 @@
 import { Artist, artists, fetchArtistFromSpotify, needsTokenRefresh } from "./mockData";
 
-// Generate a predictable but different artist list each day for Daily Challenge mode
-export function getDailyArtists(): Artist[] {
+// Generate artists for Daily Challenge mode using Spotify API
+export async function getDailyArtists(): Promise<Artist[]> {
   // Use the current date as a seed for selecting artists
   const today = new Date();
   const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
@@ -13,6 +13,39 @@ export function getDailyArtists(): Artist[] {
     seed = seed & seed; // Convert to 32bit integer
   }
   
+  // Try to get artists from Spotify API
+  if (isSpotifyAuthorized()) {
+    try {
+      const dailyArtists: Artist[] = [];
+      
+      // We need 20 artists for 10 pairs
+      for (let i = 0; i < 20; i++) {
+        // Use seed to create a deterministic "random" number for this position each day
+        const seededRandom = Math.abs((seed * (i + 1)) % 1);
+        
+        // Fetch artist from Spotify API
+        const artist = await getRandomArtistFromSpotify(seededRandom);
+        
+        if (artist) {
+          dailyArtists.push(artist);
+        } else {
+          // Fall back to mock data if API fails
+          dailyArtists.push(getSeededRandomArtist(seed, i));
+        }
+      }
+      
+      return dailyArtists;
+    } catch (error) {
+      console.error("Error fetching daily artists from Spotify:", error);
+    }
+  }
+  
+  // Fall back to using seeded mock data if Spotify API fails
+  return getSeededMockArtists(seed);
+}
+
+// Get seeded random mock artists as fallback
+function getSeededMockArtists(seed: number): Artist[] {
   // Use the seed to create a shuffled array of indices
   const indices = Array.from({ length: artists.length }, (_, i) => i);
   
@@ -29,8 +62,14 @@ export function getDailyArtists(): Artist[] {
   return indices.slice(0, 20).map(index => artists[index]);
 }
 
-// Get a random artist from our list with Spotify API integration
-export async function getRandomArtistFromSpotify(): Promise<Artist | null> {
+// Get a seeded random artist from our mock list
+function getSeededRandomArtist(seed: number, position: number): Artist {
+  const seededIndex = Math.floor(Math.abs((seed * (position + 1)) % artists.length));
+  return artists[seededIndex];
+}
+
+// Get a random artist from Spotify API with optional seed
+export async function getRandomArtistFromSpotify(seed?: number): Promise<Artist | null> {
   // Check if Spotify API is authorized
   if (isSpotifyAuthorized()) {
     try {
@@ -366,15 +405,12 @@ export async function getRandomArtistFromSpotify(): Promise<Artist | null> {
         // Add more genre groups as needed
       };
       
-      // Get a random Spotify ID based on current score (for difficulty progression)
-      // The current implementation picks random artists, but we'll modify this to use the score
-      // to adjust difficulty and ensure genre matching
-      
-      const randomGenre = Object.keys(genreGroups)[Math.floor(Math.random() * Object.keys(genreGroups).length)];
+      // Get a random Spotify ID using the provided seed if available
+      const randomGenre = Object.keys(genreGroups)[Math.floor((seed !== undefined ? seed : Math.random()) * Object.keys(genreGroups).length)];
       const genrePool = genreGroups[randomGenre];
-      const randomIndex = Math.floor(Math.random() * genrePool.length);
+      const randomIndex = Math.floor((seed !== undefined ? seed * genrePool.length : Math.random() * genrePool.length));
       
-      // Choose a random artist from the selected genre
+      // Choose artist from the selected genre
       const spotifyId = genrePool[randomIndex];
       
       // Fetch real-time data for this artist from Spotify
@@ -388,7 +424,7 @@ export async function getRandomArtistFromSpotify(): Promise<Artist | null> {
   return null;
 }
 
-// Get a random artist from our list
+// Get a random artist from our mock list
 export function getRandomArtist(excludeArtist?: Artist): Artist {
   let randomArtist: Artist;
   const availableArtists = excludeArtist 
@@ -403,15 +439,22 @@ export function getRandomArtist(excludeArtist?: Artist): Artist {
 
 // Get two random artists for comparison, adjusted for game difficulty based on score
 export async function getArtistPair(currentScore: number = 0, gameMode: "daily" | "streak" = "streak", pairIndex?: number): Promise<[Artist, Artist]> {
+  // For daily mode, get the pre-determined pairs from Spotify API
   if (gameMode === "daily" && typeof pairIndex === "number") {
-    // For daily mode, get the pre-determined pairs
-    const dailyArtists = getDailyArtists();
-    // Make sure we have enough artists
-    if (pairIndex >= 0 && pairIndex < 10) {
-      // Create a deterministic pair from the daily artists
-      const artistA = dailyArtists[pairIndex * 2]; // Even indices
-      const artistB = dailyArtists[pairIndex * 2 + 1]; // Odd indices
-      return [artistA, artistB];
+    try {
+      // Get daily artists using Spotify API
+      const dailyArtists = await getDailyArtists();
+      
+      // Make sure we have enough artists
+      if (pairIndex >= 0 && pairIndex < 10) {
+        // Create a deterministic pair from the daily artists
+        const artistA = dailyArtists[pairIndex * 2]; // Even indices
+        const artistB = dailyArtists[pairIndex * 2 + 1]; // Odd indices
+        return [artistA, artistB];
+      }
+    } catch (error) {
+      console.error("Error getting daily artist pair:", error);
+      // Fall back to regular method if daily fails
     }
   }
   
@@ -425,7 +468,7 @@ export async function getArtistPair(currentScore: number = 0, gameMode: "daily" 
     return 0.05; // Very hard: at least 5% difference
   };
   
-  // Try to use Spotify API first with genre matching
+  // Try to use Spotify API for both modes
   if (isSpotifyAuthorized()) {
     try {
       let artistA: Artist | null = null;
