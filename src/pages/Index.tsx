@@ -1,11 +1,14 @@
 
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import GameOverScreen from "@/components/GameOverScreen";
 import { Artist } from "@/utils/mockData";
 import { getArtistPair, checkGuess, saveHighScore, getHighScore } from "@/utils/gameLogic";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 const Index = () => {
   const { toast } = useToast();
@@ -104,6 +107,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
       <div className="w-full flex flex-col items-center">
+        <div className="w-full max-w-6xl flex justify-between items-center mb-2">
+          <div></div> {/* Empty div for spacing */}
+          <Link to="/config">
+            <Button variant="ghost" size="icon" className="text-spotify-green hover:text-spotify-green/80 hover:bg-spotify-lightgray/20">
+              <Settings size={20} />
+            </Button>
+          </Link>
+        </div>
+        
         <h1 className="text-4xl font-bold text-spotify-green mb-4 mt-8">Beat The Billboard Battle</h1>
         <p className="text-white text-lg mb-8 text-center max-w-2xl">
           Guess which artist has more monthly Spotify listeners. How far can you go?

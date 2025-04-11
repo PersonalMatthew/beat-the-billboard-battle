@@ -1,3 +1,4 @@
+
 export interface Artist {
   id: string;
   name: string;
@@ -6,8 +7,7 @@ export interface Artist {
   genres: string[];
 }
 
-// This is mock data for our game. In a real application, 
-// you would fetch this data from an API like Spotify's.
+// Default mock data
 export const artists: Artist[] = [
   {
     id: "1",
@@ -150,3 +150,109 @@ export const artists: Artist[] = [
     genres: ["pop", "r&b"]
   }
 ];
+
+// Function to fetch artist data from Spotify API
+export async function fetchArtistFromSpotify(artistId: string): Promise<Artist | null> {
+  try {
+    const accessToken = localStorage.getItem('spotify_access_token');
+    
+    if (!accessToken) {
+      console.log('No Spotify access token found');
+      return null;
+    }
+    
+    // Fetch artist data
+    const artistResponse = await fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (!artistResponse.ok) {
+      console.error('Failed to fetch artist data:', await artistResponse.text());
+      return null;
+    }
+    
+    const artistData = await artistResponse.json();
+    
+    // Fetch artist's top tracks to get popularity
+    const topTracksResponse = await fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (!topTracksResponse.ok) {
+      console.error('Failed to fetch top tracks:', await topTracksResponse.text());
+      return null;
+    }
+    
+    const topTracks = await topTracksResponse.json();
+    
+    // Calculate average popularity as a substitute for monthly listeners
+    // as monthly listeners is not directly available from the API
+    const avgPopularity = topTracks.tracks.reduce((sum: number, track: any) => sum + track.popularity, 0) / 
+      topTracks.tracks.length;
+      
+    // Convert to a number that looks like monthly listeners
+    const estimatedMonthlyListeners = Math.round(avgPopularity * 1000000);
+    
+    const artist: Artist = {
+      id: artistData.id,
+      name: artistData.name,
+      imageUrl: artistData.images[0]?.url || '',
+      monthlyListeners: estimatedMonthlyListeners,
+      genres: artistData.genres || []
+    };
+    
+    return artist;
+  } catch (error) {
+    console.error('Error fetching Spotify data:', error);
+    return null;
+  }
+}
+
+// Function to authenticate with Spotify
+export async function authenticateSpotify(clientId: string, clientSecret: string): Promise<string | null> {
+  try {
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    if (!tokenResponse.ok) {
+      console.error('Failed to get access token:', await tokenResponse.text());
+      return null;
+    }
+    
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    
+    // Store token in localStorage
+    localStorage.setItem('spotify_access_token', accessToken);
+    localStorage.setItem('spotify_token_expiry', (Date.now() + tokenData.expires_in * 1000).toString());
+    
+    return accessToken;
+  } catch (error) {
+    console.error('Error authenticating with Spotify:', error);
+    return null;
+  }
+}
+
+// Function to replace a mock artist with Spotify data
+export async function updateArtistWithSpotifyData(artistIndex: number, spotifyArtistId: string): Promise<boolean> {
+  const spotifyArtist = await fetchArtistFromSpotify(spotifyArtistId);
+  
+  if (spotifyArtist && artistIndex >= 0 && artistIndex < artists.length) {
+    artists[artistIndex] = spotifyArtist;
+    return true;
+  }
+  
+  return false;
+}
+
+// Check if token needs refreshing
+export function needsTokenRefresh(): boolean {
+  const expiry = localStorage.getItem('spotify_token_expiry');
+  return !expiry || Date.now() > parseInt(expiry);
+}
