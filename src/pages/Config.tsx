@@ -1,21 +1,41 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SpotifyConfig from "@/components/SpotifyConfig";
+import { isSpotifyAuthorized } from "@/utils/gameLogic";
 
 const Config = () => {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  
+  useEffect(() => {
+    setIsAuthorized(isSpotifyAuthorized());
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray p-6">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-spotify-green">Game Configuration</h1>
-          <Link to="/">
-            <Button variant="outline" className="bg-spotify-green/10 text-spotify-green border-spotify-green/30">
-              Back to Game
-            </Button>
-          </Link>
+          <div className="space-x-2">
+            <Link to="/artists">
+              <Button variant="outline" className="bg-spotify-green/10 text-spotify-green border-spotify-green/30">
+                View Artists
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button variant="outline" className="bg-spotify-green/10 text-spotify-green border-spotify-green/30">
+                Back to Game
+              </Button>
+            </Link>
+          </div>
         </div>
+        
+        {isAuthorized && (
+          <div className="mb-4 p-3 bg-green-900/40 border border-green-700/50 rounded-md text-green-300">
+            <p>✅ Spotify API connected successfully!</p>
+          </div>
+        )}
         
         <SpotifyConfig />
         

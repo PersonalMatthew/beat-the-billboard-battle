@@ -1,5 +1,5 @@
 
-import { Artist, artists } from "./mockData";
+import { Artist, artists, fetchArtistFromSpotify, needsTokenRefresh } from "./mockData";
 
 // Get a random artist from our list
 export function getRandomArtist(excludeArtist?: Artist): Artist {
@@ -45,3 +45,10 @@ export function getHighScore(): number {
   const highScore = localStorage.getItem('highScore');
   return highScore ? parseInt(highScore) : 0;
 }
+
+// Check if Spotify API is authorized and token is valid
+export function isSpotifyAuthorized(): boolean {
+  const accessToken = localStorage.getItem('spotify_access_token');
+  return accessToken !== null && !needsTokenRefresh();
+}
+

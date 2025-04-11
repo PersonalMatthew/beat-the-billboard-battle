@@ -5,10 +5,10 @@ import ArtistCard from "@/components/ArtistCard";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import GameOverScreen from "@/components/GameOverScreen";
 import { Artist } from "@/utils/mockData";
-import { getArtistPair, checkGuess, saveHighScore, getHighScore } from "@/utils/gameLogic";
+import { getArtistPair, checkGuess, saveHighScore, getHighScore, isSpotifyAuthorized } from "@/utils/gameLogic";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, Music } from "lucide-react";
 
 const Index = () => {
   const { toast } = useToast();
@@ -20,10 +20,12 @@ const Index = () => {
   const [correctArtist, setCorrectArtist] = useState<Artist | null>(null);
   const [wrongArtist, setWrongArtist] = useState<Artist | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [spotifyConnected, setSpotifyConnected] = useState<boolean>(false);
   
   // Initialize the game
   useEffect(() => {
     startNewRound();
+    setSpotifyConnected(isSpotifyAuthorized());
   }, []);
 
   // Start a new round
@@ -108,7 +110,11 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-spotify-black to-spotify-darkgray flex flex-col items-center justify-between p-4">
       <div className="w-full flex flex-col items-center">
         <div className="w-full max-w-6xl flex justify-between items-center mb-2">
-          <div></div> {/* Empty div for spacing */}
+          <Link to="/artists">
+            <Button variant="ghost" size="icon" className="text-spotify-green hover:text-spotify-green/80 hover:bg-spotify-lightgray/20">
+              <Music size={20} />
+            </Button>
+          </Link>
           <Link to="/config">
             <Button variant="ghost" size="icon" className="text-spotify-green hover:text-spotify-green/80 hover:bg-spotify-lightgray/20">
               <Settings size={20} />
@@ -120,6 +126,12 @@ const Index = () => {
         <p className="text-white text-lg mb-8 text-center max-w-2xl">
           Guess which artist has more monthly Spotify listeners. How far can you go?
         </p>
+
+        {!spotifyConnected && (
+          <div className="mb-6 p-3 bg-yellow-900/40 border border-yellow-700/50 rounded-md text-yellow-300 text-sm max-w-2xl text-center">
+            <p>⚠️ Using mock data. <Link to="/config" className="underline">Connect Spotify API</Link> for real artist data.</p>
+          </div>
+        )}
         
         <ScoreDisplay currentScore={score} />
         
