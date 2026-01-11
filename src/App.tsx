@@ -15,17 +15,26 @@ const queryClient = new QueryClient();
 const App = () => {
   const [isApiConnected, setIsApiConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
-    // Check if Spotify API is connected
-    const token = localStorage.getItem('spotify_access_token');
-    const user = localStorage.getItem('user');
-    
-    setIsApiConnected(!!token && !!user);
-    setIsLoading(false);
-    
-    // Log the current state for debugging
-    console.log("App.tsx - Auth check:", { hasToken: !!token, hasUser: !!user });
+    const initializeApp = async () => {
+      // Check if Spotify API is connected
+      const token = localStorage.getItem('spotify_access_token');
+      const user = localStorage.getItem('user');
+
+      console.log("App.tsx - Auth check:", { hasToken: !!token, hasUser: !!user });
+
+      // If not authenticated, automatically create a default user
+      if (!user) {
+        const defaultUser = { username: "Player" };
+        localStorage.setItem('user', JSON.stringify(defaultUser));
+      }
+
+      setIsApiConnected(!!token && !!user);
+      setIsLoading(false);
+    };
+
+    initializeApp();
   }, []);
 
   if (isLoading) {
