@@ -30,22 +30,26 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
     const checkAndAuthenticate = async () => {
       // Don't do anything if we're already authenticating
       if (isAuthenticating) return;
-      
+
       // Check if we have developer provided credentials
       const devClientId = localStorage.getItem("spotify_client_id");
       const devClientSecret = localStorage.getItem("spotify_client_secret");
-      
-      console.log("SpotifyConfig - Authentication check:", { 
-        isAuthenticated, 
-        isAuthenticating, 
-        notifiedAuthenticated 
+
+      console.log("SpotifyConfig - Authentication check:", {
+        isAuthenticated,
+        isAuthenticating,
+        notifiedAuthenticated
       });
-      
+
       if (!isAuthenticated && !isAuthenticating) {
         if (devClientId && devClientSecret) {
           // Use developer credentials
           console.log("SpotifyConfig - Using developer credentials for authentication");
           await handleAuthenticate(devClientId, devClientSecret);
+        } else {
+          // Auto-authenticate with default credentials
+          console.log("SpotifyConfig - Auto-authenticating with default credentials");
+          await handleAuthenticate();
         }
       } else if (isAuthenticated && onAuthenticated && !notifiedAuthenticated) {
         // Notify parent that authentication is complete
@@ -54,7 +58,7 @@ const SpotifyConfig = ({ onAuthenticated }: SpotifyConfigProps) => {
         onAuthenticated();
       }
     };
-    
+
     checkAndAuthenticate();
   }, [isAuthenticated, onAuthenticated, notifiedAuthenticated, isAuthenticating]);
 
